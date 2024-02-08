@@ -1,6 +1,8 @@
-# cellmap
+# `chs-cellmap` (`🧀-cellmap`) 
 
-This is the cellmap project.
+This is the `chs-cellmap` project, intended to be read as "cheese-cellmap".
+This project provides a set of data structures for indexing points in point clouds, 
+inspired by the amazing properties of a collection of slices of cheese (**I'm not kidding**).
 
 # Building and installing
 

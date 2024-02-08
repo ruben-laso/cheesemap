@@ -7,10 +7,10 @@ include(../cmake/folders.cmake)
 
 # ---- Dependencies ----
 
-if(PROJECT_IS_TOP_LEVEL)
-  find_package(cellmap REQUIRED)
-  enable_testing()
-endif()
+if (PROJECT_IS_TOP_LEVEL)
+    find_package(cellmap REQUIRED)
+    enable_testing()
+endif ()
 
 # ---- Tests ----
 

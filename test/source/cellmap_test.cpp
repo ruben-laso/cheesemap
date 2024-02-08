@@ -2,7 +2,7 @@
 
 auto main() -> int
 {
-  auto const result = name();
+	auto const result = name();
 
-  return result == "cellmap" ? 0 : 1;
+	return result == "cellmap" ? 0 : 1;
 }

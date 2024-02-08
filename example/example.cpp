@@ -1,7 +1,7 @@
 #include <filesystem>
 #include <iostream>
 
-#include <cellmap/cellmap.hpp>
+#include <cheesemap/cheesemap.hpp>
 
 #include "handlers.hpp"
 #include "Spherical_search.hpp"

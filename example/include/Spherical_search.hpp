@@ -2,7 +2,7 @@
 
 #include <range/v3/all.hpp>
 
-#include <cellmap/concepts/Kernel.hpp>
+#include <cheesemap/concepts/Kernel.hpp>
 
 namespace chs
 {

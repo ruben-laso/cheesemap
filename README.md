@@ -1,8 +1,10 @@
-# `chs-cellmap` (`🧀-cellmap`) 
+# `cheesemap` (`🧀map`) 
 
-This is the `chs-cellmap` project, intended to be read as "cheese-cellmap".
+This is the `cheesemap` project.
 This project provides a set of data structures for indexing points in point clouds, 
 inspired by the amazing properties of a collection of slices of cheese (**I'm not kidding**).
+
+Our lemma is "🧀 is the best way to know your neighbors".
 
 # Building and installing
 

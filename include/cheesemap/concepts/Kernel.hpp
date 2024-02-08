@@ -2,7 +2,7 @@
 
 #include <concepts>
 
-#include "cellmap/utils/Box.hpp"
+#include "cheesemap/utils/Box.hpp"
 
 namespace chs::concepts
 {

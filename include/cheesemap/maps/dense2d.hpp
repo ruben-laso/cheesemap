@@ -5,10 +5,10 @@
 
 #include <range/v3/all.hpp>
 
-#include "cellmap/concepts/concepts.hpp"
+#include "cheesemap/concepts/concepts.hpp"
 
-#include "cellmap/utils/Box.hpp"
-#include "cellmap/utils/Cell.hpp"
+#include "cheesemap/utils/Box.hpp"
+#include "cheesemap/utils/Cell.hpp"
 
 namespace chs
 {

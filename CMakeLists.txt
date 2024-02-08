@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 include(cmake/prelude.cmake)
 
 project(
-        cellmap
+        cheesemap
         VERSION 0.1.0
         DESCRIPTION "Data structure for point clouds"
         HOMEPAGE_URL "https://example.com/"
@@ -15,28 +15,28 @@ include(cmake/variables.cmake)
 
 # ---- Declare library ----
 
-add_library(cellmap_cellmap INTERFACE)
-add_library(cellmap::cellmap ALIAS cellmap_cellmap)
+add_library(cheesemap_cheesemap INTERFACE)
+add_library(cheesemap::cheesemap ALIAS cheesemap_cheesemap)
 
 set_property(
-        TARGET cellmap_cellmap PROPERTY
-        EXPORT_NAME cellmap
+        TARGET cheesemap_cheesemap PROPERTY
+        EXPORT_NAME cheesemap
 )
 
 target_include_directories(
-        cellmap_cellmap ${warning_guard}
+        cheesemap_cheesemap ${warning_guard}
         INTERFACE
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
 )
 
-target_compile_features(cellmap_cellmap INTERFACE cxx_std_20)
+target_compile_features(cheesemap_cheesemap INTERFACE cxx_std_20)
 
 # ---- Dependencies ----
 
 # Required: range-v3, minimum version 0.12.0
 find_package(range-v3 0.12.0 REQUIRED)
 target_link_libraries(
-        cellmap_cellmap ${warning_guard}
+        cheesemap_cheesemap ${warning_guard}
         INTERFACE
         range-v3::range-v3
 )
@@ -44,7 +44,7 @@ target_link_libraries(
 # Required: armadillo
 find_package(Armadillo REQUIRED)
 target_link_libraries(
-        cellmap_cellmap ${warning_guard}
+        cheesemap_cheesemap ${warning_guard}
         INTERFACE
         armadillo
 )
@@ -58,7 +58,7 @@ endif ()
 # ---- Examples ----
 
 if (PROJECT_IS_TOP_LEVEL)
-    option(BUILD_EXAMPLES "Build examples tree." "${cellmap_DEVELOPER_MODE}")
+    option(BUILD_EXAMPLES "Build examples tree." "${cheesemap_DEVELOPER_MODE}")
     if (BUILD_EXAMPLES)
         add_subdirectory(example)
     endif ()
@@ -66,12 +66,12 @@ endif ()
 
 # ---- Developer mode ----
 
-if (NOT cellmap_DEVELOPER_MODE)
+if (NOT cheesemap_DEVELOPER_MODE)
     return()
 elseif (NOT PROJECT_IS_TOP_LEVEL)
     message(
             AUTHOR_WARNING
-            "Developer mode is intended for developers of cellmap"
+            "Developer mode is intended for developers of cheesemap"
     )
 endif ()
 

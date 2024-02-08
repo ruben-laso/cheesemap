@@ -1,6 +1,6 @@
 if(PROJECT_IS_TOP_LEVEL)
   set(
-      CMAKE_INSTALL_INCLUDEDIR "include/cellmap-${PROJECT_VERSION}"
+      CMAKE_INSTALL_INCLUDEDIR "include/cheesemap-${PROJECT_VERSION}"
       CACHE STRING ""
   )
   set_property(CACHE CMAKE_INSTALL_INCLUDEDIR PROPERTY TYPE PATH)
@@ -13,17 +13,17 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 # find_package(<package>) call for consumers to find this project
-set(package cellmap)
+set(package cheesemap)
 
 install(
     DIRECTORY include/
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    COMPONENT cellmap_Development
+    COMPONENT cheesemap_Development
 )
 
 install(
-    TARGETS cellmap_cellmap
-    EXPORT cellmapTargets
+    TARGETS cheesemap_cheesemap
+    EXPORT cheesemapTargets
     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
 
@@ -35,30 +35,30 @@ write_basic_package_version_file(
 
 # Allow package maintainers to freely override the path for the configs
 set(
-    cellmap_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/${package}"
+    cheesemap_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/${package}"
     CACHE STRING "CMake package config location relative to the install prefix"
 )
-set_property(CACHE cellmap_INSTALL_CMAKEDIR PROPERTY TYPE PATH)
-mark_as_advanced(cellmap_INSTALL_CMAKEDIR)
+set_property(CACHE cheesemap_INSTALL_CMAKEDIR PROPERTY TYPE PATH)
+mark_as_advanced(cheesemap_INSTALL_CMAKEDIR)
 
 install(
     FILES cmake/install-config.cmake
-    DESTINATION "${cellmap_INSTALL_CMAKEDIR}"
+    DESTINATION "${cheesemap_INSTALL_CMAKEDIR}"
     RENAME "${package}Config.cmake"
-    COMPONENT cellmap_Development
+    COMPONENT cheesemap_Development
 )
 
 install(
     FILES "${PROJECT_BINARY_DIR}/${package}ConfigVersion.cmake"
-    DESTINATION "${cellmap_INSTALL_CMAKEDIR}"
-    COMPONENT cellmap_Development
+    DESTINATION "${cheesemap_INSTALL_CMAKEDIR}"
+    COMPONENT cheesemap_Development
 )
 
 install(
-    EXPORT cellmapTargets
-    NAMESPACE cellmap::
-    DESTINATION "${cellmap_INSTALL_CMAKEDIR}"
-    COMPONENT cellmap_Development
+    EXPORT cheesemapTargets
+    NAMESPACE cheesemap::
+    DESTINATION "${cheesemap_INSTALL_CMAKEDIR}"
+    COMPONENT cheesemap_Development
 )
 
 if(PROJECT_IS_TOP_LEVEL)

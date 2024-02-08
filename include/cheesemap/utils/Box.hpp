@@ -19,8 +19,8 @@ namespace chs
 		Point max_{};
 
 		public:
-		explicit Box(Point center, const double radius) :
-		        center_(std::move(center)),
+		explicit Box(const Point & center, const double radius) :
+		        center_(center),
 		        radii_({ radius, radius, radius }),
 		        min_(center_ - radii_),
 		        max_(center_ + radii_)
@@ -42,16 +42,6 @@ namespace chs
 		{
 			return ranges::all_of(ranges::views::indices(Dim),
 			                      [&](const auto i) { return min_[i] <= p[i] && p[i] <= max_[i]; });
-		}
-
-		template<std::size_t Dim = 3>
-		[[nodiscard]] inline auto overlaps(const Box & other) const -> bool
-		{
-			// True if a corner of "this" is inside "other" or vice versa
-			return ranges::any_of(corners(),
-			                      [&](const auto & corner) { return other.is_inside<Dim>(corner); }) or
-			       ranges::any_of(other.corners(),
-			                      [&](const auto & corner) { return is_inside<Dim>(corner); });
 		}
 
 		[[nodiscard]] inline auto min() const -> const auto & { return min_; }

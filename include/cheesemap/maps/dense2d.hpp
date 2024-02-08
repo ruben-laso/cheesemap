@@ -133,18 +133,6 @@ namespace chs
 			const auto min = coord2idx(kernel.box().min());
 			const auto max = coord2idx(kernel.box().max());
 
-			// for (auto & cell : cells_)
-			// {
-			// 	for (auto point_ptr : cell.points())
-			// 	{
-			// 		const auto indices_point = coord2idx(*point_ptr);
-			// 		if (kernel.is_inside(*point_ptr) and filter(*point_ptr))
-			// 		{
-			// 			result.push_back(point_ptr);
-			// 		}
-			// 	}
-			// }
-
 			for (const auto i : ranges::views::closed_indices(min[0], max[0]))
 			{
 				for (const auto j : ranges::views::closed_indices(min[1], max[1]))

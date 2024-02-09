@@ -59,8 +59,8 @@ TEST(chs, chs_cell_points_random)
 	}
 }
 
-int main(int argc, char ** argv)
+auto main() -> int
 {
-	::testing::InitGoogleTest(&argc, argv);
+	::testing::InitGoogleTest();
 	return RUN_ALL_TESTS();
 }

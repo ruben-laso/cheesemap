@@ -4,7 +4,6 @@
 #include <cheesemap/cheesemap.hpp>
 
 #include "handlers.hpp"
-#include "Spherical_search.hpp"
 
 template<typename... T>
 inline bool are_the_same(const std::vector<T...> & v1_, const std::vector<T...> & v2_)
@@ -35,8 +34,8 @@ inline bool are_the_same(const std::vector<T...> & v1_, const std::vector<T...> 
 	return mismatches == 0;
 }
 
-auto ground_truth(std::vector<chs::Point> & points, const chs::Spherical_search<3> & search)
-        -> std::vector<chs::Point *>
+template<chs::concepts::Kernel<chs::Point> Kernel_type>
+auto ground_truth(std::vector<chs::Point> & points, const Kernel_type & search) -> std::vector<chs::Point *>
 {
 	return ranges::views::filter(points, [&](const auto & neigh) { return search.is_inside(neigh); }) |
 	       ranges::views::transform([](auto & p) { return &p; }) | ranges::to<std::vector>;
@@ -77,7 +76,7 @@ auto main(const int argc, const char * const argv[]) -> int
 	std::size_t ns_ground_truth = 0;
 	for (const auto & p : points | ranges::views::take(1'000))
 	{
-		chs::Spherical_search<3> search(p, 1.0);
+		chs::kernels::Sphere<3> search(p, 1.0);
 
 		start                  = std::chrono::high_resolution_clock::now();
 		const auto results_map = map2d.query(search);

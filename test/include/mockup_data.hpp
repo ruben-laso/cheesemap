@@ -38,6 +38,14 @@ namespace chs::mockup
 		return point;
 	}
 
+	auto random_point()
+	{
+		const auto min = chs::Point{ 0.0, 0.0, 0.0 };
+		const auto max = chs::Point{ 100.0, 100.0, 100.0 };
+
+		return random_point(min, max);
+	}
+
 	auto random_points(const std::size_t n, const chs::Point & min, const chs::Point & max)
 	{
 		std::vector<chs::Point> points(n);
@@ -48,6 +56,14 @@ namespace chs::mockup
 		}
 
 		return points;
+	}
+
+	auto random_points(const std::size_t n)
+	{
+		const auto min = chs::Point{ 0.0, 0.0, 0.0 };
+		const auto max = chs::Point{ 100.0, 100.0, 100.0 };
+
+		return random_points(n, min, max);
 	}
 
 	auto naive_box()

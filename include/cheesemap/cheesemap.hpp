@@ -1,3 +1,5 @@
 #pragma once
 
-#include "maps/dense2d.hpp"
+#include "maps/maps.hpp"
+
+#include "kernels/kernels.hpp"

@@ -1,22 +1,23 @@
 #pragma once
 
-#include <range/v3/all.hpp>
-
 #include <cheesemap/concepts/Kernel.hpp>
 
-namespace chs
+#include <cheesemap/utils/Box.hpp>
+#include <cheesemap/utils/Point.hpp>
+
+namespace chs::kernels
 {
 	template<std::size_t Dim = 3>
-	class Spherical_search
+	class Sphere
 	{
 		chs::Point center_{};
+		double     radius_{};
 		chs::Box   box_;
-		double     radius_{ 1.0 };
 
 		public:
-		Spherical_search() = delete;
-		Spherical_search(const Point & center, const double radius) :
-		        center_(center), box_(center_, radius), radius_(radius)
+		Sphere() = delete;
+		Sphere(const Point & center, const double radius) :
+		        center_(center), radius_(radius), box_(center_, radius_)
 		{}
 
 		[[nodiscard]] inline auto center() const -> const Point & { return center_; }
@@ -37,6 +38,4 @@ namespace chs
 			return norm <= radius_ * radius_;
 		}
 	};
-} // namespace chs
-
-static_assert(chs::concepts::Kernel<chs::Spherical_search<3>, chs::Point>);
+} // namespace chs::kernels

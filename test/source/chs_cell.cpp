@@ -54,8 +54,7 @@ TEST(chs, chs_cell_points_random)
 		const auto box  = chs::Box::mbb(points);
 		const auto cell = chs::Cell<chs::Point>(box, points);
 
-		EXPECT_TRUE(
-		        are_the_same(points | ranges::views::transform([](auto & p) { return &p; }), cell.points()));
+		EXPECT_TRUE(are_the_same(points | ranges::views::addressof, cell.points()));
 	}
 }
 

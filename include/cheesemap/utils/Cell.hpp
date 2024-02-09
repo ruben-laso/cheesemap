@@ -24,9 +24,7 @@ namespace chs
 		explicit Cell(const Box & box) : box_(box) {}
 
 		Cell(const Box & box, ranges::range auto & points) :
-		        box_(box),
-		        points_(points | ranges::views::transform([](auto & p) { return &p; }) |
-		                ranges::to<Rng_points_type>)
+		        box_(box), points_(points | ranges::views::addressof | ranges::to<Rng_points_type>)
 		{}
 
 		inline void add_point(Point_ptr_type pnt) { points_.push_back(pnt); }

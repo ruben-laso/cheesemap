@@ -58,7 +58,7 @@ TEST(chs, chs_dense2d_spherical_search)
 
 			const auto results_truth =
 			        ranges::views::filter(points, [&sphere](auto & p) { return sphere.is_inside(p); }) |
-			        ranges::views::transform([](auto & p) { return &p; }) | ranges::to<std::vector>();
+			        ranges::views::addressof | ranges::to<std::vector>();
 
 			EXPECT_TRUE(are_the_same(results_map, results_truth));
 		}
@@ -97,8 +97,7 @@ TEST(chs, chs_dense2d_spherical_search_filter)
 
 			const auto results_truth =
 			        ranges::views::filter(points, [&sphere](auto & p) { return sphere.is_inside(p); }) |
-			        ranges::views::filter(filter) | ranges::views::transform([](auto & p) { return &p; }) |
-			        ranges::to<std::vector>();
+			        ranges::views::filter(filter) | ranges::views::addressof | ranges::to<std::vector>();
 
 			EXPECT_TRUE(are_the_same(results_map, results_truth));
 		}

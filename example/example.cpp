@@ -63,9 +63,9 @@ auto main(const int argc, const char * const argv[]) -> int
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 
 	start      = std::chrono::high_resolution_clock::now();
-	auto map2d = chs::dense2d<chs::Point>(points, 1.0);
+	auto map2d = chs::Dense2D<chs::Point>(points, 1.0);
 	end        = std::chrono::high_resolution_clock::now();
-	std::cout << "dense2d map build time: "
+	std::cout << "Dense2D map build time: "
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 
 	std::size_t max_neighs = std::numeric_limits<std::size_t>::min();

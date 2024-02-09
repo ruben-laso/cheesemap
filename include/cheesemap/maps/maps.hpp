@@ -1,3 +1,3 @@
 #pragma once
 
-#include "dense2d.hpp"
+#include "Dense2D.hpp"

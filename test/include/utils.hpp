@@ -7,7 +7,7 @@
 #include <range/v3/all.hpp>
 
 template<typename... T>
-inline bool are_the_same(const std::vector<T...> & v1_, const std::vector<T...> & v2_)
+inline bool are_the_same(const ranges::range auto & v1_, const ranges::range auto & v2_)
 {
 	if (v1_.size() != v2_.size())
 	{
@@ -15,8 +15,8 @@ inline bool are_the_same(const std::vector<T...> & v1_, const std::vector<T...> 
 		return false;
 	}
 
-	auto v1 = v1_;
-	auto v2 = v2_;
+	auto v1 = v1_ | ranges::to_vector;
+	auto v2 = v2_ | ranges::to_vector;
 	std::sort(std::begin(v1), std::end(v1));
 	std::sort(std::begin(v2), std::end(v2));
 

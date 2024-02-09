@@ -49,4 +49,12 @@ namespace chs::mockup
 
 		return points;
 	}
+
+	auto naive_box()
+	{
+		const auto min = chs::Point{ 0.0, 0.0, 0.0 };
+		const auto max = chs::Point{ 9.0, 9.0, 9.0 };
+
+		return chs::Box{ min, max };
+	}
 } // namespace chs::mockup

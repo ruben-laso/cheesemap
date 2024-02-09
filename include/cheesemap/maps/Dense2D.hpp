@@ -85,11 +85,11 @@ namespace chs
 		Dense2D() = delete;
 
 		template<typename Points_rng>
-		Dense2D(Points_rng & points, const resolution_type res) : Dense2D(points, vector_type{ Dim, res })
+		Dense2D(Points_rng & points, const resolution_type res) : Dense2D(points, vector_type(Dim, res))
 		{}
 
 		template<typename Points_rng>
-		Dense2D(Points_rng & points, vector_type dim) : resolutions_(std::move(dim)), box_(Box::mbb(points))
+		Dense2D(Points_rng & points, vector_type res) : resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
 			for (const auto i : ranges::views::indices(Dim))

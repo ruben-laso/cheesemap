@@ -4,11 +4,13 @@
 
 #include "mockup_data.hpp"
 
+static constexpr auto CELL_SIZE = 5.0;
+
 TEST(chs, chs_dense2d_build)
 {
 	auto points = chs::mockup::naive_points();
 
-	EXPECT_NO_THROW(const auto map = chs::Dense2D<chs::Point>(points, 1.0));
+	EXPECT_NO_THROW(const auto map = chs::Dense2D<chs::Point>(points, CELL_SIZE));
 }
 
 TEST(chs, chs_dense2d_build_random)
@@ -24,7 +26,7 @@ TEST(chs, chs_dense2d_build_random)
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
 
-		EXPECT_NO_THROW(const auto map = chs::Dense2D<chs::Point>(points, 1.0));
+		EXPECT_NO_THROW(const auto map = chs::Dense2D<chs::Point>(points, CELL_SIZE));
 	}
 }
 
@@ -42,7 +44,7 @@ TEST(chs, chs_dense2d_spherical_search)
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
 
-		auto map = chs::Dense2D<chs::Point>(points, 1.0);
+		auto map = chs::Dense2D<chs::Point>(points, CELL_SIZE);
 
 		for ([[maybe_unused]] const auto i : ranges::views::indices(num_checks))
 		{
@@ -77,7 +79,7 @@ TEST(chs, chs_dense2d_spherical_search_filter)
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
 
-		auto map = chs::Dense2D<chs::Point>(points, 1.0);
+		auto map = chs::Dense2D<chs::Point>(points, CELL_SIZE);
 
 		for ([[maybe_unused]] const auto i : ranges::views::indices(num_checks))
 		{

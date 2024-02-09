@@ -28,29 +28,81 @@ TEST(chs, chs_dense2d_build_random)
 	}
 }
 
-// TEST(chs, chs_dense2d_spherical_neighbours)
-// {
-// 	static constexpr std::size_t num_builds = 100;
-// 	static constexpr std::size_t num_points = 10'000;
-// 	static constexpr std::size_t num_neighbours = 10;
-//
-// 	for ([[maybe_unused]] const auto _ : ranges::views::indices(num_builds))
-// 	{
-// 		const auto min_coord = get_random(-10.0, 10.0);
-// 		const auto max_coord = get_random(90.0, 110.0);
-//
-// 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
-// 		                                         { max_coord, max_coord, max_coord });
-//
-// 		const auto map = chs::dense2d<chs::Point>(points, 1.0);
-//
-// 		for (const auto & point : points)
-// 		{
-// 			const auto neighbours = map.spherical_neighbours(point, 1.0, num_neighbours);
-// 			EXPECT_EQ(neighbours.size(), num_neighbours);
-// 		}
-// 	}
-// }
+TEST(chs, chs_dense2d_spherical_search)
+{
+	static constexpr std::size_t num_builds = 20;
+	static constexpr std::size_t num_points = 10'000;
+	static constexpr std::size_t num_checks = 20;
+
+	for ([[maybe_unused]] const auto _ : ranges::views::indices(num_builds))
+	{
+		const auto min_coord = get_random(-10.0, 10.0);
+		const auto max_coord = get_random(90.0, 110.0);
+
+		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
+		                                         { max_coord, max_coord, max_coord });
+
+		auto map = chs::dense2d<chs::Point>(points, 1.0);
+
+		for ([[maybe_unused]] const auto i : ranges::views::indices(num_checks))
+		{
+			const auto center = chs::mockup::random_point({ min_coord, min_coord, min_coord },
+			                                              { max_coord, max_coord, max_coord });
+			const auto radius = get_random(0.0, 100.0);
+
+			const auto sphere = chs::kernels::Sphere<3>(center, radius);
+
+			const auto results_map = map.query(sphere);
+
+			const auto results_truth =
+			        ranges::views::filter(points, [&sphere](auto & p) { return sphere.is_inside(p); }) |
+			        ranges::views::transform([](auto & p) { return &p; }) | ranges::to<std::vector>();
+
+			EXPECT_TRUE(are_the_same(results_map, results_truth));
+		}
+	}
+}
+
+TEST(chs, chs_dense2d_spherical_search_filter)
+{
+	static constexpr std::size_t num_builds = 20;
+	static constexpr std::size_t num_points = 10'000;
+	static constexpr std::size_t num_checks = 20;
+
+	for ([[maybe_unused]] const auto _ : ranges::views::indices(num_builds))
+	{
+		const auto min_coord = get_random(-10.0, 10.0);
+		const auto max_coord = get_random(90.0, 110.0);
+
+		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
+		                                         { max_coord, max_coord, max_coord });
+
+		auto map = chs::dense2d<chs::Point>(points, 1.0);
+
+		for ([[maybe_unused]] const auto i : ranges::views::indices(num_checks))
+		{
+			const auto center = chs::mockup::random_point({ min_coord, min_coord, min_coord },
+			                                              { max_coord, max_coord, max_coord });
+			const auto radius = get_random(0.0, 100.0);
+
+			const auto sphere = chs::kernels::Sphere<3>(center, radius);
+
+			const auto filter = [](auto & p) {
+				return p[2] > 50.0;
+			};
+
+			const auto results_map = map.query(sphere, filter);
+
+			const auto results_truth =
+			        ranges::views::filter(points, [&sphere](auto & p) { return sphere.is_inside(p); }) |
+			        ranges::views::filter(filter) | ranges::views::transform([](auto & p) { return &p; }) |
+			        ranges::to<std::vector>();
+
+			EXPECT_TRUE(are_the_same(results_map, results_truth));
+		}
+	}
+}
+
 
 auto main() -> int
 {

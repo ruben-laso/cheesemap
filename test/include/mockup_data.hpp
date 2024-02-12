@@ -8,6 +8,11 @@
 
 namespace chs::mockup
 {
+	static constexpr double DEFAULT_MIN_COORD     = 0.0;
+	static constexpr double DEFAULT_MAX_COORD     = 100.0;
+	static constexpr double DEFAULT_MAP_VARIANCE  = 10.0;
+	static constexpr double DEFAULT_SEARCH_RADIUS = 10.0;
+
 	auto naive_points()
 	{
 		std::vector<chs::Point> points = {
@@ -40,8 +45,8 @@ namespace chs::mockup
 
 	auto random_point()
 	{
-		const auto min = chs::Point{ 0.0, 0.0, 0.0 };
-		const auto max = chs::Point{ 100.0, 100.0, 100.0 };
+		const auto min = chs::Point{ DEFAULT_MIN_COORD, DEFAULT_MIN_COORD, DEFAULT_MIN_COORD };
+		const auto max = chs::Point{ DEFAULT_MAX_COORD, DEFAULT_MAX_COORD, DEFAULT_MAX_COORD };
 
 		return random_point(min, max);
 	}
@@ -60,8 +65,8 @@ namespace chs::mockup
 
 	auto random_points(const std::size_t n)
 	{
-		const auto min = chs::Point{ 0.0, 0.0, 0.0 };
-		const auto max = chs::Point{ 100.0, 100.0, 100.0 };
+		const auto min = chs::Point{ DEFAULT_MIN_COORD, DEFAULT_MIN_COORD, DEFAULT_MIN_COORD };
+		const auto max = chs::Point{ DEFAULT_MAX_COORD, DEFAULT_MAX_COORD, DEFAULT_MAX_COORD };
 
 		return random_points(n, min, max);
 	}

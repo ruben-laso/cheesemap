@@ -20,8 +20,10 @@ TEST(chs, chs_dense3d_build_random)
 
 	for ([[maybe_unused]] const auto _ : ranges::views::indices(num_builds))
 	{
-		const auto min_coord = get_random(-10.0, 10.0);
-		const auto max_coord = get_random(90.0, 110.0);
+		const auto min_coord = get_random(chs::mockup::DEFAULT_MIN_COORD - chs::mockup::DEFAULT_MAP_VARIANCE,
+		                                  chs::mockup::DEFAULT_MIN_COORD + chs::mockup::DEFAULT_MAP_VARIANCE);
+		const auto max_coord = get_random(chs::mockup::DEFAULT_MAX_COORD - chs::mockup::DEFAULT_MAP_VARIANCE,
+		                                  chs::mockup::DEFAULT_MAX_COORD + chs::mockup::DEFAULT_MAP_VARIANCE);
 
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
@@ -38,8 +40,10 @@ TEST(chs, chs_dense3d_spherical_search)
 
 	for ([[maybe_unused]] const auto _ : ranges::views::indices(num_builds))
 	{
-		const auto min_coord = get_random(-10.0, 10.0);
-		const auto max_coord = get_random(90.0, 110.0);
+		const auto min_coord = get_random(chs::mockup::DEFAULT_MIN_COORD - chs::mockup::DEFAULT_MAP_VARIANCE,
+		                                  chs::mockup::DEFAULT_MIN_COORD + chs::mockup::DEFAULT_MAP_VARIANCE);
+		const auto max_coord = get_random(chs::mockup::DEFAULT_MAX_COORD - chs::mockup::DEFAULT_MAP_VARIANCE,
+		                                  chs::mockup::DEFAULT_MAX_COORD + chs::mockup::DEFAULT_MAP_VARIANCE);
 
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
@@ -50,7 +54,7 @@ TEST(chs, chs_dense3d_spherical_search)
 		{
 			const auto center = chs::mockup::random_point({ min_coord, min_coord, min_coord },
 			                                              { max_coord, max_coord, max_coord });
-			const auto radius = get_random(0.0, 100.0);
+			const auto radius = get_random(0.0, chs::mockup::DEFAULT_SEARCH_RADIUS);
 
 			const auto sphere = chs::kernels::Sphere<3>(center, radius);
 
@@ -73,8 +77,10 @@ TEST(chs, chs_dense3d_spherical_search_filter)
 
 	for ([[maybe_unused]] const auto _ : ranges::views::indices(num_builds))
 	{
-		const auto min_coord = get_random(-10.0, 10.0);
-		const auto max_coord = get_random(90.0, 110.0);
+		const auto min_coord = get_random(chs::mockup::DEFAULT_MIN_COORD - chs::mockup::DEFAULT_MAP_VARIANCE,
+		                                  chs::mockup::DEFAULT_MIN_COORD + chs::mockup::DEFAULT_MAP_VARIANCE);
+		const auto max_coord = get_random(chs::mockup::DEFAULT_MAX_COORD - chs::mockup::DEFAULT_MAP_VARIANCE,
+		                                  chs::mockup::DEFAULT_MAX_COORD + chs::mockup::DEFAULT_MAP_VARIANCE);
 
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
@@ -85,7 +91,7 @@ TEST(chs, chs_dense3d_spherical_search_filter)
 		{
 			const auto center = chs::mockup::random_point({ min_coord, min_coord, min_coord },
 			                                              { max_coord, max_coord, max_coord });
-			const auto radius = get_random(0.0, 100.0);
+			const auto radius = get_random(0.0, chs::mockup::DEFAULT_SEARCH_RADIUS);
 
 			const auto sphere = chs::kernels::Sphere<3>(center, radius);
 

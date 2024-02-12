@@ -17,6 +17,7 @@ namespace chs
 	{
 		using resolution_type = double;
 		using array_type      = std::array<resolution_type, Dim>;
+		using sizes_type      = std::array<std::size_t, Dim>;
 		using vector_type     = std::vector<resolution_type>;
 		using cell_type       = Cell<Point_type>;
 
@@ -34,10 +35,35 @@ namespace chs
 		Box box_;
 
 		// Number of cells of the map on each dimension
-		std::array<std::size_t, Dim> sizes_{ Dim };
+		sizes_type sizes_{ Dim };
 
 		// Cells of the map
 		std::vector<cell_type> cells_;
+
+		static auto global2indices(const auto idx, const ranges::range auto & sizes)
+		{
+			sizes_type indices;
+
+			for (const auto i : ranges::views::indices(Dim))
+			{
+				indices[i] =
+				        (idx / ranges::accumulate(sizes | ranges::views::drop(i + 1), std::size_t{ 1 },
+				                                  std::multiplies<std::size_t>{})) %
+				        sizes[i];
+			}
+
+			return indices;
+		}
+
+		static auto indices2global(const ranges::range auto & indices, const ranges::range auto & sizes)
+		{
+			const auto cell_idx = ranges::accumulate(ranges::views::zip(indices, sizes), std::size_t{ 0 },
+			                                         [](const auto acc, const auto pair_idx_size) {
+				                                         const auto [idx, size] = pair_idx_size;
+				                                         return acc * size + idx;
+			                                         });
+			return cell_idx;
+		}
 
 		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx) const
 		{
@@ -54,9 +80,9 @@ namespace chs
 			return Box{ center, radii };
 		}
 
-		[[nodiscard]] inline auto coord2idx(const Point & p) const
+		[[nodiscard]] inline auto coord2indices(const Point & p) const
 		{
-			std::vector<std::size_t> idx(Dim);
+			std::array<std::size_t, Dim> idx;
 			for (const auto i : ranges::views::indices(Dim))
 			{
 				const auto rel = p[i] - box_.min()[i];
@@ -66,24 +92,14 @@ namespace chs
 			return idx;
 		}
 
-		[[nodiscard]] inline auto to_cell_idx(const ranges::range auto & indices) const
-		{
-			const auto cell_idx = ranges::accumulate(ranges::views::zip(indices, sizes_), std::size_t{ 0 },
-			                                         [](const auto acc, const auto pair_idx_size) {
-				                                         const auto [idx, size] = pair_idx_size;
-				                                         return acc * size + idx;
-			                                         });
-			return cell_idx;
-		}
-
 		[[nodiscard]] inline auto & at(const ranges::range auto & indices)
 		{
-			return cells_[to_cell_idx(indices)];
+			return cells_[indices2global(indices, sizes_)];
 		}
 
 		[[nodiscard]] inline auto & at(const ranges::range auto & indices) const
 		{
-			return cells_[to_cell_idx(indices)];
+			return cells_[indices2global(indices, sizes_)];
 		}
 
 
@@ -95,7 +111,7 @@ namespace chs
 		{}
 
 		template<typename Points_rng>
-		Dense(Points_rng & points, const vector_type & res) : resolutions_(res), box_(Box::mbb(points))
+		Dense(Points_rng & points, vector_type res) : resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
 			for (const auto i : ranges::views::indices(Dim))
@@ -111,22 +127,12 @@ namespace chs
 
 			for (const auto i : ranges::views::indices(num_cells))
 			{
-				std::vector<std::size_t> indices(Dim);
-				for (const auto j : ranges::views::indices(Dim))
-				{
-					indices[j] = (i / ranges::accumulate(sizes_ | ranges::views::drop(j + 1),
-					                                     std::size_t{ 1 },
-					                                     std::multiplies<std::size_t>{})) %
-					             sizes_[j];
-				}
+				const auto & indices = global2indices(i, sizes_);
 				cells_.emplace_back(idx2box(indices));
 			}
 
 			// Add points to cells
-			for (auto & point : points)
-			{
-				at(coord2idx(point)).add_point(&point);
-			}
+			ranges::for_each(points, [this](auto & point) { at(coord2indices(point)).add_point(&point); });
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>
@@ -138,42 +144,29 @@ namespace chs
 			return query(kernel, dummy);
 		}
 
-		template<chs::concepts::Kernel<chs::Point> Kernel_t, typename Filter_t>
+		template<chs::concepts::Kernel<chs::Point> Kernel_t, chs::concepts::Filter<Point_type> Filter_t>
 		[[nodiscard]] inline auto query(const Kernel_t & kernel, Filter_t && filter) const
 		{
 			std::vector<Point *> points;
 
-			std::vector<std::pair<std::size_t, std::size_t>> idxs_min_max(Dim);
-
-			const auto min = coord2idx(kernel.box().min());
-			const auto max = coord2idx(kernel.box().max());
-			for (const auto i : ranges::views::indices(Dim))
-			{
-				idxs_min_max[i].first  = std::max(min[i], std::size_t{ 0 });
-				idxs_min_max[i].second = std::min(sizes_[i], max[i]);
-			}
-
-			std::vector<std::size_t> search_sizes(Dim);
-			for (const auto i : ranges::views::indices(Dim))
-			{
-				search_sizes[i] = idxs_min_max[i].second - idxs_min_max[i].first + 1;
-			}
+			const auto min        = coord2indices(kernel.box().min());
+			const auto max        = coord2indices(kernel.box().max());
+			const auto search_dim = [&]() {
+				const auto sizes_view = ranges::views::zip_with(std::minus<>{}, max, min) |
+				                        ranges::views::transform([](const auto i) { return i + 1; });
+				std::array<std::size_t, Dim> sizes;
+				ranges::copy(sizes_view, sizes.begin());
+				return sizes;
+			}();
 
 			const auto num_cells =
-			        ranges::accumulate(search_sizes, std::size_t{ 1 }, std::multiplies<std::size_t>{});
+			        ranges::accumulate(search_dim, std::size_t{ 1 }, std::multiplies<std::size_t>{});
 
 			for (const auto i : ranges::views::indices(num_cells))
 			{
-				std::vector<std::size_t> indices(Dim);
-				for (const auto j : ranges::views::indices(Dim))
-				{
-					indices[j] = (i / ranges::accumulate(search_sizes | ranges::views::drop(j + 1),
-					                                     std::size_t{ 1 },
-					                                     std::multiplies<std::size_t>{})) %
-					             search_sizes[j];
-					indices[j] += idxs_min_max[j].first;
-				}
-				const auto & cell = at(indices);
+				const auto slice_indices  = global2indices(i, search_dim);
+				const auto global_indices = ranges::views::zip_with(std::plus<>{}, slice_indices, min);
+				const auto & cell         = at(global_indices);
 				for (const auto & point : cell.points())
 				{
 					if (kernel.is_inside(*point) and filter(*point)) { points.emplace_back(point); }

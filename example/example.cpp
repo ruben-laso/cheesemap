@@ -27,7 +27,10 @@ auto main(const int argc, const char * const argv[]) -> int
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 
 	start      = std::chrono::high_resolution_clock::now();
-	auto map2d = chs::Dense2D<chs::Point>(points, 1.0);
+	auto map   = chs::Dense<chs::Point, 2>(points, 5.0);
+	// auto map   = chs::Dense<chs::Point, 3>(points, 5.0);
+	// auto map = chs::Dense2D<chs::Point>(points, 5.0);
+	// auto map = chs::Dense3D<chs::Point>(points, 5.0);
 	end        = std::chrono::high_resolution_clock::now();
 	std::cout << "Dense2D map build time: "
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
@@ -42,7 +45,7 @@ auto main(const int argc, const char * const argv[]) -> int
 		chs::kernels::Sphere<3> search(p, 2.5);
 
 		start                  = std::chrono::high_resolution_clock::now();
-		const auto results_map = map2d.query(search);
+		const auto results_map = map.query(search);
 		end                    = std::chrono::high_resolution_clock::now();
 
 		ns_map += static_cast<std::size_t>(

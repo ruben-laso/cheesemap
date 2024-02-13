@@ -26,12 +26,12 @@ auto main(const int argc, const char * const argv[]) -> int
 	std::cout << "Reading input file time: "
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 
-	start      = std::chrono::high_resolution_clock::now();
-	auto map   = chs::Dense<chs::Point, 2>(points, 5.0);
-	// auto map   = chs::Dense<chs::Point, 3>(points, 5.0);
+	start    = std::chrono::high_resolution_clock::now();
+	auto map = chs::Dense<chs::Point, 2>(points, 5.0);
+	// auto map = chs::Dense<chs::Point, 3>(points, 5.0);
 	// auto map = chs::Dense2D<chs::Point>(points, 5.0);
 	// auto map = chs::Dense3D<chs::Point>(points, 5.0);
-	end        = std::chrono::high_resolution_clock::now();
+	end      = std::chrono::high_resolution_clock::now();
 	std::cout << "Dense2D map build time: "
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 
@@ -39,8 +39,10 @@ auto main(const int argc, const char * const argv[]) -> int
 	std::size_t min_neighs = std::numeric_limits<std::size_t>::max();
 	double      ave_neighs = 0.0;
 
+	static constexpr std::size_t NUM_SEARCHES = 10'000;
+
 	std::size_t ns_map = 0;
-	for (const auto & p : points | ranges::views::take(1'000))
+	for (const auto & p : points | ranges::views::take(NUM_SEARCHES))
 	{
 		chs::kernels::Sphere<3> search(p, 2.5);
 
@@ -57,7 +59,7 @@ auto main(const int argc, const char * const argv[]) -> int
 	}
 
 	std::cout << "Total search time: " << ns_map << "ns" << '\n';
-	std::cout << "Average search time: " << ns_map / 10'000 << "ns" << '\n';
+	std::cout << "Average search time: " << ns_map / NUM_SEARCHES << "ns" << '\n';
 	std::cout << "Max neighbors: " << max_neighs << '\n';
 	std::cout << "Min neighbors: " << min_neighs << '\n';
 	std::cout << "Average neighbors: " << ave_neighs << '\n';

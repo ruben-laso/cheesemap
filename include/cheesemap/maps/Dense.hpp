@@ -1,11 +1,14 @@
 #pragma once
 
+#include <queue>
+#include <set>
 #include <utility>
 #include <vector>
 
 #include <range/v3/all.hpp>
 
 #include "cheesemap/concepts/concepts.hpp"
+#include "cheesemap/kernels/kernels.hpp"
 
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
@@ -15,34 +18,35 @@ namespace chs
 	template<typename Point_type, std::size_t Dim = 3>
 	class Dense
 	{
-		using resolution_type = double;
-		using array_type      = std::array<resolution_type, Dim>;
-		using sizes_type      = std::array<std::size_t, Dim>;
-		using vector_type     = std::vector<resolution_type>;
-		using cell_type       = Cell<Point_type>;
+		using resolution_type   = double;
+		using dimensions_array  = std::array<resolution_type, Dim>;
+		using dimensions_vector = std::vector<resolution_type>;
+		using indices_array     = std::array<std::size_t, Dim>;
+		using indices_vector    = std::vector<std::size_t>;
+		using cell_type         = Cell<Point_type>;
 
 		private:
-		static constexpr array_type DEFAULT_RESOLUTIONS = []() {
+		static constexpr dimensions_array DEFAULT_RESOLUTIONS = []() {
 			std::array<resolution_type, Dim> res{};
 			res.fill(1);
 			return res;
 		}();
 
 		// Dimension of each cell
-		vector_type resolutions_{ DEFAULT_RESOLUTIONS };
+		dimensions_vector resolutions_{ DEFAULT_RESOLUTIONS };
 
 		// Bounding box of the map
 		Box box_;
 
 		// Number of cells of the map on each dimension
-		sizes_type sizes_{ Dim };
+		indices_array sizes_{ Dim };
 
 		// Cells of the map
 		std::vector<cell_type> cells_;
 
 		static auto global2indices(const auto idx, const ranges::range auto & sizes)
 		{
-			sizes_type indices;
+			indices_array indices;
 
 			for (const auto i : ranges::views::indices(Dim))
 			{
@@ -82,7 +86,7 @@ namespace chs
 
 		[[nodiscard]] inline auto coord2indices(const Point & p) const
 		{
-			std::array<std::size_t, Dim> idx;
+			indices_array idx;
 			for (const auto i : ranges::views::indices(Dim))
 			{
 				const auto rel = p[i] - box_.min()[i];
@@ -102,16 +106,47 @@ namespace chs
 			return cells_[indices2global(indices, sizes_)];
 		}
 
+		[[nodiscard]] auto submap_dimensions(const ranges::range auto & min,
+		                                     const ranges::range auto & max) const
+		{
+			const auto sizes_view = ranges::views::zip_with(std::minus<>{}, max, min) |
+			                        ranges::views::transform([](const auto i) { return i + 1; });
+			indices_array sizes;
+			ranges::copy(sizes_view, sizes.begin());
+			return sizes;
+		}
+
+		[[nodiscard]] auto indcs_cells_to_search(auto && kernel)
+		{
+			std::vector<indices_vector> cells_to_search;
+
+			const auto min = coord2indices(kernel.box().min());
+			const auto max = coord2indices(kernel.box().max());
+
+			const auto search_dim = submap_dimensions(min, max);
+
+			const auto num_cells =
+			        ranges::accumulate(search_dim, std::size_t{ 1 }, std::multiplies<std::size_t>{});
+
+			for (const auto i : ranges::views::indices(num_cells))
+			{
+				const auto slice_indices  = global2indices(i, search_dim);
+				const auto global_indices = ranges::views::zip_with(std::plus<>{}, slice_indices, min);
+				cells_to_search.emplace_back(global_indices | ranges::to_vector);
+			}
+
+			return cells_to_search;
+		}
 
 		public:
 		Dense() = delete;
 
 		template<typename Points_rng>
-		Dense(Points_rng & points, const resolution_type res) : Dense(points, vector_type(Dim, res))
+		Dense(Points_rng & points, const resolution_type res) : Dense(points, dimensions_vector(Dim, res))
 		{}
 
 		template<typename Points_rng>
-		Dense(Points_rng & points, vector_type res) : resolutions_(std::move(res)), box_(Box::mbb(points))
+		Dense(Points_rng & points, dimensions_vector res) : resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
 			for (const auto i : ranges::views::indices(Dim))
@@ -151,13 +186,7 @@ namespace chs
 
 			const auto min        = coord2indices(kernel.box().min());
 			const auto max        = coord2indices(kernel.box().max());
-			const auto search_dim = [&]() {
-				const auto sizes_view = ranges::views::zip_with(std::minus<>{}, max, min) |
-				                        ranges::views::transform([](const auto i) { return i + 1; });
-				std::array<std::size_t, Dim> sizes;
-				ranges::copy(sizes_view, sizes.begin());
-				return sizes;
-			}();
+			const auto search_dim = submap_dimensions(min, max);
 
 			const auto num_cells =
 			        ranges::accumulate(search_dim, std::size_t{ 1 }, std::multiplies<std::size_t>{});
@@ -174,6 +203,88 @@ namespace chs
 			}
 
 			return points;
+		}
+
+		[[nodiscard]] inline auto knn(const std::integral auto k, const Point_type & p)
+		{
+			const auto distance = [&](const Point_type & a, const Point_type & b) {
+				return arma::norm(a - b);
+			};
+
+			// Store the points and the distance
+			std::unordered_map<Point *, double>     pre_candidates;
+			std::vector<std::pair<double, Point *>> candidates;
+
+			// Create a queue of cells to visit (by indices)
+			std::queue<std::vector<std::size_t>> to_visit;
+
+			// And a list of visited cells
+			std::vector<bool> visited_cells(cells_.size(), false);
+
+			// Do an increasing search
+			double search_radius = ranges::max(resolutions_);
+
+			while (std::cmp_less(candidates.size(), k) and
+			       ranges::any_of(visited_cells, [](const auto is_visited) { return not is_visited; }))
+			{
+				// With the new search radius, move pts_and_dist to candidates
+				std::vector<Point *> to_erase;
+				for (const auto & [point, dist] : pre_candidates)
+				{
+					if (dist < search_radius)
+					{
+						candidates.emplace_back(dist, point);
+						to_erase.emplace_back(point);
+					}
+				}
+				for (const auto & point : to_erase)
+				{
+					pre_candidates.erase(point);
+				}
+
+				chs::kernels::Sphere<Dim> search(p, search_radius);
+
+				// Get the cells to visit (and haven't been visited yet)
+				const auto cells_to_search = indcs_cells_to_search(search);
+				// Add the cells to the queue
+				for (const auto & indcs_cell : cells_to_search)
+				{
+					to_visit.push(indcs_cell);
+				}
+
+				// Visit the cells
+				while (not to_visit.empty())
+				{
+					const auto cell_idx = to_visit.front();
+					to_visit.pop();
+
+					const auto global_cell_idx = indices2global(cell_idx, sizes_);
+
+					// Skip if the cell has been visited already
+					if (visited_cells[global_cell_idx]) { continue; }
+					// Mark the cell as visited
+					visited_cells[global_cell_idx] = true;
+
+					// Get the cell
+					auto & cell = at(cell_idx);
+
+					// If the cell is completely inside the search sphere, directly to candidates
+					ranges::for_each(cell.points(), [&](const auto & point_ptr) {
+						const auto d = distance(p, *point_ptr);
+						if (d < search.radius()) { candidates.emplace_back(d, point_ptr); }
+						else { pre_candidates[point_ptr] = d; }
+					});
+				}
+
+				// Update the search radius
+				search_radius *= 2.0;
+			}
+
+			// Sort the points by distance
+			ranges::actions::sort(candidates,
+			                      [](const auto & a, const auto & b) { return a.first < b.first; });
+
+			return candidates | ranges::views::take(k) | ranges::to_vector;
 		}
 	};
 } // namespace chs

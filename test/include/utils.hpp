@@ -6,8 +6,7 @@
 
 #include <range/v3/all.hpp>
 
-template<typename... T>
-inline bool are_the_same(const ranges::range auto & v1_, const ranges::range auto & v2_)
+inline bool are_the_same(const ranges::range auto & v1_, const ranges::range auto & v2_, auto && cmp)
 {
 	if (v1_.size() != v2_.size())
 	{
@@ -15,16 +14,14 @@ inline bool are_the_same(const ranges::range auto & v1_, const ranges::range aut
 		return false;
 	}
 
-	auto v1 = v1_ | ranges::to_vector;
-	auto v2 = v2_ | ranges::to_vector;
-	std::sort(std::begin(v1), std::end(v1));
-	std::sort(std::begin(v2), std::end(v2));
+	auto v1 = v1_ | ranges::to_vector | ranges::actions::sort;
+	auto v2 = v2_ | ranges::to_vector | ranges::actions::sort;
 
 	size_t mismatches = 0;
 
 	for (const auto & [e1, e2] : ranges::views::zip(v1, v2))
 	{
-		if (e1 not_eq e2) { ++mismatches; }
+		if (not cmp(e1, e2)) { ++mismatches; }
 	}
 
 	if (mismatches > 0)
@@ -33,6 +30,11 @@ inline bool are_the_same(const ranges::range auto & v1_, const ranges::range aut
 	}
 
 	return mismatches == 0;
+}
+
+inline bool are_the_same(const ranges::range auto & v1, const ranges::range auto & v2)
+{
+	return are_the_same(v1, v2, std::equal_to{});
 }
 
 template<typename T>

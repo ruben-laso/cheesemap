@@ -212,11 +212,19 @@ namespace chs
 			};
 
 			// Store the points and the distance
-			std::unordered_map<Point *, double>     pre_candidates;
-			std::vector<std::pair<double, Point *>> candidates;
+			using dist_ptr = std::pair<double, Point *>;
+
+			auto cmp_distance = [](const auto & a, const auto & b) {
+				return a.first > b.first;
+			};
+
+			std::priority_queue<dist_ptr, std::vector<dist_ptr>, decltype(cmp_distance)> pre_candidates(
+			        cmp_distance);
+
+			std::vector<dist_ptr> candidates;
 
 			// Create a queue of cells to visit (by indices)
-			std::queue<std::vector<std::size_t>> to_visit;
+			std::queue<indices_vector> to_visit;
 
 			// And a list of visited cells
 			std::vector<bool> visited_cells(cells_.size(), false);
@@ -228,18 +236,12 @@ namespace chs
 			       ranges::any_of(visited_cells, [](const auto is_visited) { return not is_visited; }))
 			{
 				// With the new search radius, move pts_and_dist to candidates
-				std::vector<Point *> to_erase;
-				for (const auto & [point, dist] : pre_candidates)
+				while (not pre_candidates.empty())
 				{
-					if (dist < search_radius)
-					{
-						candidates.emplace_back(dist, point);
-						to_erase.emplace_back(point);
-					}
-				}
-				for (const auto & point : to_erase)
-				{
-					pre_candidates.erase(point);
+					const auto [dist, point] = pre_candidates.top();
+					if (dist > search_radius) { break; }
+					candidates.emplace_back(dist, point);
+					pre_candidates.pop();
 				}
 
 				chs::kernels::Sphere<Dim> search(p, search_radius);
@@ -272,7 +274,7 @@ namespace chs
 					ranges::for_each(cell.points(), [&](const auto & point_ptr) {
 						const auto d = distance(p, *point_ptr);
 						if (d < search.radius()) { candidates.emplace_back(d, point_ptr); }
-						else { pre_candidates[point_ptr] = d; }
+						else { pre_candidates.emplace(d, point_ptr); }
 					});
 				}
 

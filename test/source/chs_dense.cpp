@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "mockup_data.hpp"
+#include "timing.hpp"
 
 static constexpr auto CELL_SIZE = 5.0;
 
@@ -119,7 +120,10 @@ TEST(chs, chs_dense_knn)
 	static constexpr std::size_t num_points = 10'000;
 	static constexpr std::size_t num_checks = 20;
 
-	static constexpr std::size_t max_k = 20;
+	static constexpr std::size_t max_k = 200;
+
+	double avg_secs_map   = 0.0;
+	double avg_secs_truth = 0.0;
 
 	for ([[maybe_unused]] const auto _ : ranges::views::indices(num_builds))
 	{
@@ -144,9 +148,10 @@ TEST(chs, chs_dense_knn)
 
 			const auto k = get_random({ 1 }, max_k);
 
-			const auto results_map = map.knn(k, center);
+			TIME_IT(const auto results_map = map.knn(k, center))
+			avg_secs_map += chs::timing::last_seconds;
 
-			const auto results_truth = [&]() {
+			auto get_truth = [&]() {
 				using dist_point = std::pair<double, chs::Point *>;
 
 				std::vector<dist_point> dist_points;
@@ -161,7 +166,9 @@ TEST(chs, chs_dense_knn)
 				                      [](const auto & a, const auto & b) { return a.first < b.first; });
 
 				return dist_points | ranges::views::take(k) | ranges::to<std::vector>();
-			}();
+			};
+			TIME_IT(const auto results_truth = get_truth())
+			avg_secs_truth += chs::timing::last_seconds;
 
 			// const auto same = are_the_same(results_map, results_truth);
 			const auto same = are_the_same(results_map | ranges::views::values,
@@ -169,6 +176,9 @@ TEST(chs, chs_dense_knn)
 			EXPECT_TRUE(same);
 		}
 	}
+
+	std::cout << "Average seconds map: " << avg_secs_map / (num_builds * num_checks) << '\n';
+	std::cout << "Average seconds truth: " << avg_secs_truth / (num_builds * num_checks) << '\n';
 }
 
 auto main() -> int

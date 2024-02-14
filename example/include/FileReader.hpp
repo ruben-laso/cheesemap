@@ -26,7 +26,7 @@ namespace fs = std::filesystem;
 
 /**
  * @author Miguel Yermo
- * @brief Abstract class defining common behavor for all file readers
+ * @brief Abstract class defining common behavior for all file readers
  */
 class FileReader
 {

@@ -33,8 +33,8 @@ target_compile_features(cheesemap_cheesemap INTERFACE cxx_std_20)
 
 # ---- Dependencies ----
 
-# Required: range-v3, minimum version 0.12.0
-find_package(range-v3 0.12.0 REQUIRED)
+# Required: range-v3
+find_package(range-v3 REQUIRED)
 target_link_libraries(
         cheesemap_cheesemap ${warning_guard}
         INTERFACE

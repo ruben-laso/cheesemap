@@ -177,8 +177,8 @@ TEST(chs, chs_box_is_outside_random)
 				auto       point                = chs::mockup::random_point(box.min(), box.max());
 				// Randomly select coordinates to be outside the box (at least one is outside)
 				const auto num_coords_to_change = get_random(1U, 3U);
-				const auto indices_to_change    = ranges::views::indices(3U) |
-				                               ranges::views::sample(num_coords_to_change);
+				const auto indices_to_change =
+				        ranges::views::indices(3U) | ranges::views::sample(num_coords_to_change);
 				// Change the selected coordinates to be outside the box
 				for (const auto j : indices_to_change)
 				{

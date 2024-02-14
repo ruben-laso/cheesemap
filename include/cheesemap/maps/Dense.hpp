@@ -178,9 +178,7 @@ namespace chs
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>
 		[[nodiscard]] inline auto query(const Kernel_t & kernel) const
 		{
-			const auto dummy = []([[maybe_unused]] const auto &) {
-				return true;
-			};
+			const auto dummy = []([[maybe_unused]] const auto &) { return true; };
 			return query(kernel, dummy);
 		}
 
@@ -219,9 +217,7 @@ namespace chs
 			// Store the points and the distance
 			using dist_ptr = std::pair<double, Point *>;
 
-			auto cmp_distance = [](const auto & a, const auto & b) {
-				return a.first > b.first;
-			};
+			auto cmp_distance = [](const dist_ptr & a, const dist_ptr & b) { return a.first > b.first; };
 
 			std::priority_queue<dist_ptr, std::vector<dist_ptr>, decltype(cmp_distance)> pre_candidates(
 			        cmp_distance);
@@ -231,9 +227,7 @@ namespace chs
 			// Taboo list (to avoid visiting the same cell twice)
 			std::set<std::size_t> taboo;
 
-			auto not_visited = [&](const auto & global_idx) {
-				return not taboo.contains(global_idx);
-			};
+			auto not_visited = [&](const auto & global_idx) { return not taboo.contains(global_idx); };
 
 			// Do an increasing search
 			double search_radius = ranges::max(resolutions_);

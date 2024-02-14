@@ -95,9 +95,7 @@ TEST(chs, chs_dense2d_spherical_search_filter)
 
 			const auto sphere = chs::kernels::Sphere<3>(center, radius);
 
-			const auto filter = [](auto & p) {
-				return p[2] > 50.0;
-			};
+			const auto filter = [](auto & p) { return p[2] > 50.0; };
 
 			const auto results_map = map.query(sphere, filter);
 

@@ -98,9 +98,7 @@ TEST(chs, chs_dense_spherical_search_filter)
 
 			const auto sphere = chs::kernels::Sphere<3>(center, radius);
 
-			const auto filter = [](auto & p) {
-				return p[2] > 50.0;
-			};
+			const auto filter = [](auto & p) { return p[2] > 50.0; };
 
 			const auto results_map = map.query(sphere, filter);
 
@@ -142,9 +140,7 @@ TEST(chs, chs_dense_knn)
 			const auto center = chs::mockup::random_point({ min_coord, min_coord, min_coord },
 			                                              { max_coord, max_coord, max_coord });
 
-			const auto distance = [](const auto & p, const auto & q) {
-				return arma::norm(p - q);
-			};
+			const auto distance = [](const auto & p, const auto & q) { return arma::norm(p - q); };
 
 			const auto k = get_random({ 1 }, max_k);
 

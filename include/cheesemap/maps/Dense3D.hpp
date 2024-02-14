@@ -121,9 +121,7 @@ namespace chs
 		template<chs::concepts::Kernel<Point_type> Kernel_type>
 		[[nodiscard]] inline auto query(const Kernel_type & kernel)
 		{
-			const auto dummy = []([[maybe_unused]] const auto &) {
-				return true;
-			};
+			const auto dummy = []([[maybe_unused]] const auto &) { return true; };
 			return query(kernel, dummy);
 		}
 

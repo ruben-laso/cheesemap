@@ -33,7 +33,7 @@ namespace chs
 		}();
 
 		// Dimension of each cell
-		dimensions_vector resolutions_{ DEFAULT_RESOLUTIONS };
+		dimensions_vector resolutions_{ DEFAULT_RESOLUTIONS.begin(), DEFAULT_RESOLUTIONS.end() };
 
 		// Bounding box of the map
 		Box box_;

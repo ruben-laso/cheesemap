@@ -18,6 +18,7 @@ namespace chs
 	template<typename Point_type, std::size_t Dim = 3>
 	class Dense
 	{
+		protected:
 		using resolution_type   = double;
 		using dimensions_array  = std::array<resolution_type, Dim>;
 		using dimensions_vector = std::vector<resolution_type>;
@@ -25,7 +26,6 @@ namespace chs
 		using indices_vector    = std::vector<std::size_t>;
 		using cell_type         = Cell<Point_type>;
 
-		private:
 		static constexpr dimensions_array DEFAULT_RESOLUTIONS = []() {
 			std::array<resolution_type, Dim> res{};
 			res.fill(1);
@@ -69,7 +69,7 @@ namespace chs
 			return cell_idx;
 		}
 
-		[[nodiscard]] inline auto indices2global(const ranges::range auto & indices)
+		[[nodiscard]] inline auto indices2global(const ranges::range auto & indices) const
 		{
 			return indices2global(indices, sizes_);
 		}
@@ -121,7 +121,7 @@ namespace chs
 			return sizes;
 		}
 
-		[[nodiscard]] auto indcs_cells_to_search(auto && kernel)
+		[[nodiscard]] auto indcs_cells_to_search(auto && kernel) const
 		{
 			std::vector<indices_vector> cells_to_search;
 
@@ -208,7 +208,7 @@ namespace chs
 			return points;
 		}
 
-		[[nodiscard]] inline auto knn(const std::integral auto k, const Point_type & p)
+		[[nodiscard]] inline auto knn(const std::integral auto k, const Point_type & p) const
 		{
 			const auto distance = [&](const Point_type & a, const Point_type & b) {
 				return arma::norm(a - b);

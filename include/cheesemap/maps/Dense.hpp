@@ -69,6 +69,11 @@ namespace chs
 			return cell_idx;
 		}
 
+		[[nodiscard]] inline auto indices2global(const ranges::range auto & indices)
+		{
+			return indices2global(indices, sizes_);
+		}
+
 		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx) const
 		{
 			Point center{};
@@ -223,17 +228,17 @@ namespace chs
 
 			std::vector<dist_ptr> candidates;
 
-			// Create a queue of cells to visit (by indices)
-			std::queue<indices_vector> to_visit;
+			// Taboo list (to avoid visiting the same cell twice)
+			std::set<std::size_t> taboo;
 
-			// And a list of visited cells
-			std::vector<bool> visited_cells(cells_.size(), false);
+			auto not_visited = [&](const auto & global_idx) {
+				return not taboo.contains(global_idx);
+			};
 
 			// Do an increasing search
 			double search_radius = ranges::max(resolutions_);
 
-			while (std::cmp_less(candidates.size(), k) and
-			       ranges::any_of(visited_cells, [](const auto is_visited) { return not is_visited; }))
+			while (std::cmp_less(candidates.size(), k) and std::cmp_less(taboo.size(), cells_.size()))
 			{
 				// With the new search radius, move pts_and_dist to candidates
 				while (not pre_candidates.empty())
@@ -248,27 +253,20 @@ namespace chs
 
 				// Get the cells to visit (and haven't been visited yet)
 				const auto cells_to_search = indcs_cells_to_search(search);
-				// Add the cells to the queue
-				for (const auto & indcs_cell : cells_to_search)
-				{
-					to_visit.push(indcs_cell);
-				}
+
+				auto to_visit = cells_to_search | ranges::views::transform([&](const auto & indices) {
+					                return indices2global(indices);
+				                }) |
+				                ranges::views::filter(not_visited);
 
 				// Visit the cells
-				while (not to_visit.empty())
+				for (const auto cell_idx : to_visit)
 				{
-					const auto cell_idx = to_visit.front();
-					to_visit.pop();
-
-					const auto global_cell_idx = indices2global(cell_idx, sizes_);
-
-					// Skip if the cell has been visited already
-					if (visited_cells[global_cell_idx]) { continue; }
 					// Mark the cell as visited
-					visited_cells[global_cell_idx] = true;
+					taboo.insert(cell_idx);
 
 					// Get the cell
-					auto & cell = at(cell_idx);
+					auto & cell = cells_[cell_idx];
 
 					// If the cell is completely inside the search sphere, directly to candidates
 					ranges::for_each(cell.points(), [&](const auto & point_ptr) {

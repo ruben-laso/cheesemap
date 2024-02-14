@@ -120,7 +120,7 @@ TEST(chs, chs_dense_knn)
 	static constexpr std::size_t num_points = 10'000;
 	static constexpr std::size_t num_checks = 20;
 
-	static constexpr std::size_t max_k = 200;
+	static constexpr std::size_t max_k = 2'000;
 
 	double avg_secs_map   = 0.0;
 	double avg_secs_truth = 0.0;

@@ -5,3 +5,4 @@
 #include "Dense3D.hpp"
 
 #include "Sparse2D.hpp"
+#include "Sparse3D.hpp"

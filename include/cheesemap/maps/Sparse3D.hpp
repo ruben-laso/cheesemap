@@ -15,10 +15,10 @@
 namespace chs
 {
 	template<typename Point_type>
-	class Sparse2D
+	class Sparse3D
 	{
 		protected:
-		static constexpr std::size_t Dim = 2;
+		static constexpr std::size_t Dim = 3;
 
 		using resolution_type   = double;
 		using dimensions_array  = std::array<resolution_type, Dim>;
@@ -42,26 +42,21 @@ namespace chs
 		indices_array sizes_{ Dim };
 
 		// Sparse matrix storing the indices of the cells
-		arma::SpMat<std::size_t> indices_;
+		arma::Cube<std::size_t> indices_;
 
 		// Cells of the map
 		std::vector<cell_type> cells_;
 
-		[[nodiscard]] inline auto idx2box(const std::size_t i, const std::size_t j) const
+		[[nodiscard]] inline auto idx2box(const std::size_t i, const std::size_t j, const std::size_t k) const
 		{
-			Point center{ box_.min()[0] + (static_cast<resolution_type>(i) + 0.5) * resolutions_[0],
-				      box_.min()[1] + (static_cast<resolution_type>(j) + 0.5) * resolutions_[1], 0 };
-			Point radii{ resolutions_[0] / 2, resolutions_[1] / 2, 0 };
+			Point center{
+				box_.min()[0] + (static_cast<resolution_type>(i) + 0.5) * resolutions_[0], // x
+				box_.min()[1] + (static_cast<resolution_type>(j) + 0.5) * resolutions_[1], // y
+				box_.min()[2] + (static_cast<resolution_type>(k) + 0.5) * resolutions_[2]  // z
+			};
+			Point radii{ resolutions_[0] / 2, resolutions_[1] / 2, resolutions_[2] / 2 };
 
 			return Box{ center, radii };
-		}
-
-		[[nodiscard]] inline auto submat(const Point_type & min, const Point_type & max) const
-		{
-			const auto [min_i, min_j] = coord2indices(min);
-			const auto [max_i, max_j] = coord2indices(max);
-
-			return std::as_const(indices_).submat(min_i, min_j, max_i, max_j);
 		}
 
 		[[nodiscard]] inline auto coord2indices(const Point & p) const
@@ -70,7 +65,16 @@ namespace chs
 			const auto size = box_.max() - box_.min();
 			const auto i    = static_cast<std::size_t>(std::clamp(rel[0], 0.0, size[0]) / resolutions_[0]);
 			const auto j    = static_cast<std::size_t>(std::clamp(rel[1], 0.0, size[1]) / resolutions_[1]);
-			return std::make_pair(i, j);
+			const auto k    = static_cast<std::size_t>(std::clamp(rel[2], 0.0, size[2]) / resolutions_[2]);
+			return std::make_tuple(i, j, k);
+		}
+
+		[[nodiscard]] inline auto submat(const Point_type & min, const Point_type & max) const
+		{
+			const auto [min_i, min_j, min_k] = coord2indices(min);
+			const auto [max_i, max_j, max_k] = coord2indices(max);
+
+			return std::as_const(indices_).subcube(min_i, min_j, min_k, max_i, max_j, max_k);
 		}
 
 		[[nodiscard]] auto global_idx_cells_to_search(auto && kernel) const
@@ -87,14 +91,14 @@ namespace chs
 		}
 
 		public:
-		Sparse2D() = delete;
+		Sparse3D() = delete;
 
 		template<typename Points_rng>
-		Sparse2D(Points_rng & points, const resolution_type res) : Sparse2D(points, dimensions_vector(Dim, res))
+		Sparse3D(Points_rng & points, const resolution_type res) : Sparse3D(points, dimensions_vector(Dim, res))
 		{}
 
 		template<typename Points_rng>
-		Sparse2D(Points_rng & points, dimensions_vector res) :
+		Sparse3D(Points_rng & points, dimensions_vector res) :
 		        resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			for (const auto i : ranges::views::indices(Dim))
@@ -103,33 +107,25 @@ namespace chs
 				        std::floor((box_.max()[i] - box_.min()[i]) / resolutions_[i]) + 1);
 			}
 
-			indices_.resize(sizes_[0], sizes_[1]);
+			indices_.resize(sizes_[0], sizes_[1], sizes_[2]);
 
 			for (auto & point : points)
 			{
-				const auto [i, j] = coord2indices(point);
+				const auto [i, j, k] = coord2indices(point);
 
 				// If the cell is empty
-				if (std::as_const(indices_).at(i, j) == 0)
+				if (std::as_const(indices_).at(i, j, k) == 0)
 				{
 					// Create a new cell
-					cells_.emplace_back(Cell<Point_type>{ idx2box(i, j) });
+					cells_.emplace_back(Cell<Point_type>{ idx2box(i, j, k) });
 					// Store the index of the cell in the sparse matrix
-					indices_.at(i, j) = cells_.size();
+					indices_.at(i, j, k) = cells_.size();
 				}
 
-				// Insert in (i, j) the index of the cell - 1
-				// (-1 because we can't store a 0 in a sparse matrix)
-				const auto idx = std::as_const(indices_).at(i, j) - 1;
+				// Insert in (i, j) the index of the cell - 1 (0 is reserved for empty cells)
+				const auto idx = std::as_const(indices_).at(i, j, k) - 1;
 				cells_[idx].add_point(&point);
 			}
-		}
-
-		[[nodiscard]] inline auto non_empty_cells() const { return indices_.n_nonzero; }
-
-		[[nodiscard]] inline auto size() const
-		{
-			return ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>

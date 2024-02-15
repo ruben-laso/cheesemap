@@ -57,20 +57,18 @@ namespace chs
 			const auto min = this->coord2indices(kernel.box().min());
 			const auto max = this->coord2indices(kernel.box().max());
 
-			for (const auto i : ranges::views::closed_indices(min[0], max[0]))
+			for (const auto [i, j, k] :
+			     ranges::views::cartesian_product(ranges::views::closed_indices(min[0], max[0]),
+			                                      ranges::views::closed_indices(min[1], max[1]),
+			                                      ranges::views::closed_indices(min[2], max[2])))
 			{
-				for (const auto j : ranges::views::closed_indices(min[1], max[1]))
+				auto & cell =
+				        this->cells_[i * this->sizes_[1] * this->sizes_[2] + j * this->sizes_[2] + k];
+				for (auto * point_ptr : cell.points())
 				{
-					for (const auto k : ranges::views::closed_indices(min[2], max[2]))
+					if (kernel.is_inside(*point_ptr) and filter(*point_ptr))
 					{
-						auto & cell = at(std::array{ i, j, k });
-						for (auto * point_ptr : cell.points())
-						{
-							if (kernel.is_inside(*point_ptr) and filter(*point_ptr))
-							{
-								result.push_back(point_ptr);
-							}
-						}
+						result.push_back(point_ptr);
 					}
 				}
 			}

@@ -20,16 +20,6 @@ namespace chs
 		protected:
 		using super_type = chs::Dense<Point_type, 2>;
 
-		[[nodiscard]] inline auto & at(const ranges::range auto & indices)
-		{
-			return this->cells_[indices[0] * this->sizes_[1] + indices[1]];
-		}
-
-		[[nodiscard]] inline auto & at(const ranges::range auto & indices) const
-		{
-			return this->cells_[indices[0] * this->sizes_[1] + indices[1]];
-		}
-
 		public:
 		Dense2D() = delete;
 
@@ -53,17 +43,16 @@ namespace chs
 			const auto min = this->coord2indices(kernel.box().min());
 			const auto max = this->coord2indices(kernel.box().max());
 
-			for (const auto i : ranges::views::closed_indices(min[0], max[0]))
+			for (const auto [i, j] :
+			     ranges::views::cartesian_product(ranges::views::closed_indices(min[0], max[0]),
+			                                      ranges::views::closed_indices(min[1], max[1])))
 			{
-				for (const auto j : ranges::views::closed_indices(min[1], max[1]))
+				auto & cell = this->cells_[i * this->sizes_[1] + j];
+				for (auto * point_ptr : cell.points())
 				{
-					auto & cell = at(std::array{ i, j });
-					for (auto * point_ptr : cell.points())
+					if (kernel.is_inside(*point_ptr) and filter(*point_ptr))
 					{
-						if (kernel.is_inside(*point_ptr) and filter(*point_ptr))
-						{
-							result.push_back(point_ptr);
-						}
+						result.push_back(point_ptr);
 					}
 				}
 			}

@@ -9,6 +9,8 @@
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
 
+#include "cheesemap/kernels/Sphere.hpp"
+
 #include "cheesemap/concepts/concepts.hpp"
 
 namespace chs
@@ -240,7 +242,10 @@ namespace chs
 			// Do an increasing search
 			double search_radius = ranges::max(resolutions_);
 
-			while (std::cmp_less(candidates.size(), k) and std::cmp_less(taboo.size(), cells_.size()))
+			const auto num_cells =
+			        ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
+
+			while (std::cmp_less(candidates.size(), k) and std::cmp_less(taboo.size(), num_cells))
 			{
 				// With the new search radius, move pts_and_dist to candidates
 				while (not pre_candidates.empty())

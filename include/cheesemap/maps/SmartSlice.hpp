@@ -7,7 +7,7 @@
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
 
-namespace chs::Slice
+namespace chs::slice
 {
 	template<typename Point_type>
 	class Smart
@@ -21,7 +21,6 @@ namespace chs::Slice
 		using dimensions_array  = std::array<resolution_type, Dim>;
 		using dimensions_vector = std::vector<resolution_type>;
 		using indices_array     = std::array<std::size_t, Dim>;
-		using indices_vector    = std::vector<std::size_t>;
 		using cell_type         = Cell<Point_type>;
 
 		static constexpr dimensions_array DEFAULT_RESOLUTIONS = []() {
@@ -40,8 +39,7 @@ namespace chs::Slice
 		indices_array sizes_{ Dim };
 
 		// Cells of the map (using sparse representation)
-		std::vector<cell_type>   cells_sparse_;
-		arma::SpMat<std::size_t> indices_;
+		std::unordered_map<std::size_t, cell_type> cells_sparse_;
 
 		// Cells of the map (using dense representation)
 		std::vector<cell_type> cells_dense_;
@@ -67,21 +65,18 @@ namespace chs::Slice
 
 		inline void add_point_sparse(Point_type & point)
 		{
-			const auto [i, j] = coord2indices(point);
+			const auto [i, j]  = coord2indices(point);
+			const auto glb_idx = indices2global(i, j);
 
-			// If the cell is empty
-			if (std::as_const(indices_).at(i, j) == 0)
+			auto cells_it = cells_sparse_.find(glb_idx);
+
+			if (cells_it == cells_sparse_.end())
 			{
-				// Create a new cell
-				cells_sparse_.emplace_back(Cell<Point_type>{ idx2box(i, j) });
-				// Store the index of the cell in the sparse matrix
-				indices_.at(i, j) = cells_sparse_.size();
+				cells_sparse_.emplace(glb_idx, Cell<Point_type>{ idx2box(i, j) });
+				cells_it = cells_sparse_.find(glb_idx);
 			}
 
-			// Insert in (i, j) the index of the cell - 1
-			// (-1 because we can't store a 0 in a sparse matrix)
-			const auto idx = std::as_const(indices_).at(i, j) - 1;
-			cells_sparse_[idx].add_point(&point);
+			cells_it->second.add_point(&point);
 
 			if (density() > SPARSE_TO_DENSE_THRESHOLD) { sparse2dense(); }
 		}
@@ -90,37 +85,32 @@ namespace chs::Slice
 		{
 			cells_dense_ = {};
 
-			for (const auto i : ranges::views::indices(sizes_[0]))
+			for (const auto [i, j] : ranges::views::cartesian_product(ranges::views::indices(sizes_[0]),
+			                                                          ranges::views::indices(sizes_[1])))
 			{
-				for (const auto j : ranges::views::indices(sizes_[1]))
+				const auto idx = indices2global(i, j);
+				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
 				{
-					const auto idx = std::as_const(indices_).at(i, j);
-					if (idx == 0) { cells_dense_.emplace_back(Cell<Point_type>{ idx2box(i, j) }); }
-					else { cells_dense_.emplace_back(std::move(cells_sparse_[idx - 1])); }
+					cells_dense_.emplace_back(cell_it->second);
 				}
+				else { cells_dense_.emplace_back(Cell<Point_type>{ idx2box(i, j) }); }
 			}
 
-			use_sparse_ = false;
-
-			indices_.resize(0, 0);
+			use_sparse_   = false;
 			cells_sparse_ = {};
 		}
 
 		inline void dense2sparse()
 		{
 			cells_sparse_ = {};
-			indices_.reset();
 
-			for (const auto i : ranges::views::indices(sizes_[0]))
+			for (const auto [i, j] : ranges::views::cartesian_product(ranges::views::indices(sizes_[0]),
+			                                                          ranges::views::indices(sizes_[1])))
 			{
-				for (const auto j : ranges::views::indices(sizes_[1]))
+				const auto idx = i * sizes_[1] + j;
+				if (not cells_dense_[idx].empty())
 				{
-					const auto idx = i * sizes_[1] + j;
-					if (not cells_dense_[idx].empty())
-					{
-						cells_sparse_.emplace_back(cells_dense_[idx]);
-						indices_.at(i, j) = cells_sparse_.size();
-					}
+					cells_sparse_.emplace(indices2global(i, j), cells_dense_[idx]);
 				}
 			}
 
@@ -138,9 +128,20 @@ namespace chs::Slice
 		        resolutions_(res),
 		        box_(box),
 		        sizes_({ static_cast<std::size_t>(std::ceil((box.max()[0] - box.min()[0]) / res[0])),
-		                 static_cast<std::size_t>(std::ceil((box.max()[1] - box.min()[1]) / res[1])) }),
-		        indices_(sizes_[0], sizes_[1])
+		                 static_cast<std::size_t>(std::ceil((box.max()[1] - box.min()[1]) / res[1])) })
 		{}
+
+		template<typename Points_rng>
+		        requires ranges::input_range<Points_rng>
+		Smart(Points_rng & points, const resolution_type res) : Smart(Box::mbb(points), res)
+		{
+			for (auto & point : points)
+			{
+				add_point(point);
+			}
+		}
+
+		[[nodiscard]] inline auto sparse() const { return use_sparse_; }
 
 		[[nodiscard]] inline auto resolutions() const -> const auto & { return resolutions_; }
 
@@ -152,7 +153,7 @@ namespace chs::Slice
 		{
 			if (use_sparse_)
 			{
-				return static_cast<double>(indices_.n_nonzero) / static_cast<double>(indices_.n_elem);
+				return static_cast<double>(cells_sparse_.size()) / static_cast<double>(size());
 			}
 			return 1.0;
 		}
@@ -166,7 +167,7 @@ namespace chs::Slice
 			return std::make_pair(i, j);
 		}
 
-		[[nodiscard]] inline auto to_global_idx_as_dense(const std::size_t i, const std::size_t j) const
+		[[nodiscard]] inline auto indices2global(const std::size_t i, const std::size_t j) const
 		{
 			return i * sizes_[1] + j;
 		}
@@ -182,9 +183,12 @@ namespace chs::Slice
 		{
 			if (use_sparse_)
 			{
-				const auto idx = std::as_const(indices_).at(i, j);
-				if (std::cmp_equal(idx, 0)) { return std::nullopt; }
-				return { cells_sparse_[idx - 1] };
+				const auto idx = indices2global(i, j);
+				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
+				{
+					return { cell_it->second };
+				}
+				return std::nullopt;
 			}
 
 			return { cells_dense_[i * sizes_[1] + j] };
@@ -195,12 +199,15 @@ namespace chs::Slice
 		{
 			if (use_sparse_)
 			{
-				const auto idx = std::as_const(indices_).at(i, j);
-				if (std::cmp_equal(idx, 0)) { return std::nullopt; }
-				return { cells_sparse_[idx - 1] };
+				const auto idx = indices2global(i, j);
+				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
+				{
+					return { cell_it->second };
+				}
+				return std::nullopt;
 			}
 
 			return { cells_dense_[i * sizes_[1] + j] };
 		}
 	};
-} // namespace chs::Slice
+} // namespace chs::slice

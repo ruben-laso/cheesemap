@@ -21,7 +21,7 @@ namespace chs
 		using resolution_type   = double;
 		using dimensions_vector = std::vector<resolution_type>;
 
-		Slice::Smart<Point_type> slice_;
+		chs::slice::Smart<Point_type> slice_;
 
 		public:
 		Mixed2D() = default;
@@ -92,7 +92,7 @@ namespace chs
 			std::set<std::size_t> taboo;
 
 			auto is_visited = [&](const auto i, const auto j) {
-				const auto global_idx = slice_.to_global_idx_as_dense(i, j);
+				const auto global_idx = slice_.indices2global(i, j);
 				return taboo.contains(global_idx);
 			};
 
@@ -123,7 +123,7 @@ namespace chs
 					if (is_visited(i, j)) { continue; }
 
 					// Mark the cell as visited
-					taboo.insert(slice_.to_global_idx_as_dense(i, j));
+					taboo.insert(slice_.indices2global(i, j));
 
 					// Get the cell
 					const auto & cell_opt = slice_.at(i, j);

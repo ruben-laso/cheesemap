@@ -46,7 +46,7 @@ namespace chs
 		// Number of cells of the map on each dimension
 		indices_array sizes_{ Dim };
 
-		std::vector<Slice::Smart<Point_type>> slices_;
+		std::vector<chs::slice::Smart<Point_type>> slices_;
 
 		[[nodiscard]] inline auto idx2box(const std::size_t i, const std::size_t j, const std::size_t k) const
 		{

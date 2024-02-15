@@ -39,8 +39,6 @@ TEST(chs, chs_smart_slice_sparsity)
 	chs::Point max{ 10.0, 10.0, 10.0 };
 	chs::Box   box{ std::make_pair(min, max) };
 
-	std::array sizes{ min[0] / cell_size, min[1] / cell_size };
-
 	auto slice = chs::slice::Smart<chs::Point>(box, cell_size);
 
 	EXPECT_TRUE(slice.sparse());

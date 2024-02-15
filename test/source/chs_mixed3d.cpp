@@ -1,4 +1,4 @@
-#include <cheesemap/cheesemap.hpp>
+#include <cheesemap/maps/Mixed3D.hpp>
 
 #include <gtest/gtest.h>
 

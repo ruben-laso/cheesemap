@@ -1,4 +1,4 @@
-#include <cheesemap/cheesemap.hpp>
+#include <cheesemap/maps/Sparse3D.hpp>
 
 #include <gtest/gtest.h>
 

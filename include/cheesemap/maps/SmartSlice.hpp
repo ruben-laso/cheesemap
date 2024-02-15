@@ -4,6 +4,9 @@
 #include <optional>
 #include <vector>
 
+#include "cheesemap/utils/Box.hpp"
+#include "cheesemap/utils/Cell.hpp"
+
 namespace chs::Slice
 {
 	template<typename Point_type>

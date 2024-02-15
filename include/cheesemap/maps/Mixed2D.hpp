@@ -1,6 +1,14 @@
 #pragma once
 
-#include "SmartSlice.hpp"
+#include <queue>
+#include <set>
+#include <vector>
+
+#include <range/v3/all.hpp>
+
+#include "cheesemap/concepts/concepts.hpp"
+#include "cheesemap/kernels/kernels.hpp"
+#include "cheesemap/maps/SmartSlice.hpp"
 
 namespace chs
 {

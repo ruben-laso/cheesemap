@@ -1,4 +1,4 @@
-#include <cheesemap/cheesemap.hpp>
+#include <cheesemap/kernels/Sphere.hpp>
 
 #include <gtest/gtest.h>
 

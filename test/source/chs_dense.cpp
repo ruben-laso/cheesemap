@@ -1,4 +1,4 @@
-#include <cheesemap/cheesemap.hpp>
+#include <cheesemap/maps/Dense.hpp>
 
 #include <gtest/gtest.h>
 

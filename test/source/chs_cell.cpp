@@ -1,4 +1,4 @@
-#include <cheesemap/cheesemap.hpp>
+#include <cheesemap/utils/Cell.hpp>
 
 #include <gtest/gtest.h>
 

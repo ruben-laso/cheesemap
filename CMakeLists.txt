@@ -6,7 +6,7 @@ project(
         cheesemap
         VERSION 0.1.0
         DESCRIPTION "Data structure for point clouds"
-        HOMEPAGE_URL "https://example.com/"
+        HOMEPAGE_URL "https://github.com/ruben-laso/cheesemap"
         LANGUAGES NONE
 )
 

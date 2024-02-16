@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cheesemap/concepts/Kernel.hpp>
+#include "cheesemap/concepts/Kernel.hpp"
 
-#include <cheesemap/utils/Box.hpp>
-#include <cheesemap/utils/Point.hpp>
+#include "cheesemap/utils/Box.hpp"
+#include "cheesemap/utils/Point.hpp"
 
 namespace chs::kernels
 {

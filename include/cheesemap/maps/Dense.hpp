@@ -146,12 +146,14 @@ namespace chs
 		public:
 		Dense() = delete;
 
-		template<typename Points_rng>
-		Dense(Points_rng & points, const resolution_type res) : Dense(points, dimensions_vector(Dim, res))
+		template<ranges::range Points_rng>
+		Dense(Points_rng & points, const resolution_type res, const bool reorder = false) :
+		        Dense(points, dimensions_vector(Dim, res), reorder)
 		{}
 
-		template<typename Points_rng>
-		Dense(Points_rng & points, dimensions_vector res) : resolutions_(std::move(res)), box_(Box::mbb(points))
+		template<ranges::range Points_rng> // requires to be sortable
+		Dense(Points_rng & points, dimensions_vector res, const bool reorder = false) :
+		        resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
 			for (const auto i : ranges::views::indices(Dim))
@@ -167,8 +169,15 @@ namespace chs
 
 			cells_.resize(num_cells);
 
-			// Add points to cells
-			ranges::for_each(points, [this](auto & point) { at(coord2indices(point)).add_point(&point); });
+			// Sort points by global idx (should improve locality when querying)
+			if (reorder)
+			{
+				auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
+				std::sort(points.begin(), points.end(),
+				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
+			}
+
+			ranges::for_each(points, [&](auto & point) { at(coord2indices(point)).add_point(&point); });
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>

@@ -2,6 +2,8 @@
 
 #include <array>
 #include <unordered_map>
+#include <queue>
+#include <set>
 #include <vector>
 
 #include <range/v3/all.hpp>
@@ -147,17 +149,26 @@ namespace chs
 		Sparse() = delete;
 
 		template<typename Points_rng>
-		Sparse(Points_rng & points, const resolution_type res) : Sparse(points, dimensions_vector(Dim, res))
+		Sparse(Points_rng & points, const resolution_type res, const bool reorder = false) :
+		        Sparse(points, dimensions_vector(Dim, res), reorder)
 		{}
 
 		template<typename Points_rng>
-		Sparse(Points_rng & points, dimensions_vector res) :
+		Sparse(Points_rng & points, dimensions_vector res, const bool reorder = false) :
 		        resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			for (const auto i : ranges::views::indices(Dim))
 			{
 				sizes_[i] = static_cast<std::size_t>(
 				        std::floor((box_.max()[i] - box_.min()[i]) / resolutions_[i]) + 1);
+			}
+
+			// Sort points by global idx (should improve locality when querying)
+			if (reorder)
+			{
+				auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
+				std::sort(points.begin(), points.end(),
+				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
 			}
 
 			for (auto & point : points)

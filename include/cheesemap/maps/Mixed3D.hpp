@@ -80,11 +80,12 @@ namespace chs
 		Mixed3D() = default;
 
 		template<typename Points_rng>
-		Mixed3D(Points_rng & points, const resolution_type res) : Mixed3D(points, dimensions_vector(Dim, res))
+		Mixed3D(Points_rng & points, const resolution_type res, const bool reorder = false) :
+		        Mixed3D(points, dimensions_vector(Dim, res), reorder)
 		{}
 
 		template<typename Points_rng>
-		Mixed3D(Points_rng & points, dimensions_vector res) :
+		Mixed3D(Points_rng & points, dimensions_vector res, const bool reorder = false) :
 		        resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
@@ -102,6 +103,17 @@ namespace chs
 
 				Box slice_box{ std::make_pair(box_min.min(), box_max.max()) };
 				slices_.emplace_back(slice_box, resolutions_);
+			}
+
+			// Sort points by global idx (should improve locality when querying)
+			if (reorder)
+			{
+				auto proj = [&](const auto & p) {
+					const auto [i, j, k] = coord2indices(p);
+					return indices2global(i, j, k);
+				};
+				std::sort(points.begin(), points.end(),
+				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
 			}
 
 			// Add the points to the slices

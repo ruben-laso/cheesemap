@@ -27,12 +27,25 @@ namespace chs
 		Mixed2D() = default;
 
 		template<typename Points_rng>
-		Mixed2D(Points_rng & points, const resolution_type res) : Mixed2D(points, dimensions_vector(Dim, res))
+		Mixed2D(Points_rng & points, const resolution_type res, const bool reorder = false) :
+		        Mixed2D(points, dimensions_vector(Dim, res), reorder)
 		{}
 
 		template<typename Points_rng>
-		Mixed2D(Points_rng & points, const dimensions_vector & res) : slice_(Box::mbb(points), res)
+		Mixed2D(Points_rng & points, const dimensions_vector & res, const bool reorder = false) :
+		        slice_(Box::mbb(points), res)
 		{
+			// Sort points by global idx (should improve locality when querying)
+			if (reorder)
+			{
+				auto proj = [&](const auto & p) {
+					const auto [i, j] = slice_.coord2indices(p);
+					return slice_.indices2global(i, j);
+				};
+				std::sort(points.begin(), points.end(),
+				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
+			}
+
 			for (auto & point : points)
 			{
 				slice_.add_point(point);

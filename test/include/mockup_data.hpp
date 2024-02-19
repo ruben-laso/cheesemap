@@ -71,6 +71,16 @@ namespace chs::mockup
 		return random_points(n, min, max);
 	}
 
+	auto random_map(const std::size_t n = 10'000)
+	{
+		const auto min_coord =
+		        get_random(DEFAULT_MIN_COORD - DEFAULT_MAP_VARIANCE, DEFAULT_MIN_COORD + DEFAULT_MAP_VARIANCE);
+		const auto max_coord =
+		        get_random(DEFAULT_MAX_COORD - DEFAULT_MAP_VARIANCE, DEFAULT_MAX_COORD + DEFAULT_MAP_VARIANCE);
+
+		return random_points(n, { min_coord, min_coord, min_coord }, { max_coord, max_coord, max_coord });
+	}
+
 	auto naive_box()
 	{
 		const auto min = chs::Point{ 0.0, 0.0, 0.0 };

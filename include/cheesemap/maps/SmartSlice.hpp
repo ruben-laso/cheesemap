@@ -72,7 +72,7 @@ namespace chs::slice
 
 			if (cells_it == cells_sparse_.end())
 			{
-				cells_sparse_.emplace(glb_idx, Cell<Point_type>{ idx2box(i, j) });
+				cells_sparse_.emplace(glb_idx, cell_type{});
 				cells_it = cells_sparse_.find(glb_idx);
 			}
 
@@ -91,9 +91,9 @@ namespace chs::slice
 				const auto idx = indices2global(i, j);
 				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
 				{
-					cells_dense_.emplace_back(cell_it->second);
+					cells_dense_.emplace_back(std::move(cell_it->second));
 				}
-				else { cells_dense_.emplace_back(Cell<Point_type>{ idx2box(i, j) }); }
+				else { cells_dense_.emplace_back(cell_type{}); }
 			}
 
 			use_sparse_   = false;

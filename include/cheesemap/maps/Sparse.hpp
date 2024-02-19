@@ -170,7 +170,7 @@ namespace chs
 
 				if (cell_it == cells_.end())
 				{
-					cell_it = cells_.emplace(global_idx, cell_type{ idx2box(indices) }).first;
+					cell_it = cells_.emplace(global_idx, cell_type{}).first;
 				}
 
 				auto & cell = cell_it->second;

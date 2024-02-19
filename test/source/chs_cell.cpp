@@ -6,17 +6,14 @@
 
 TEST(chs, chs_cell_build)
 {
-	const auto box = chs::mockup::naive_box();
-
-	EXPECT_NO_THROW(const auto cell = chs::Cell<chs::Point>(box));
+	EXPECT_NO_THROW(const auto cell = chs::Cell<chs::Point>());
 }
 
 TEST(chs, chs_cell_build_points)
 {
-	auto       points = chs::mockup::naive_points();
-	const auto box    = chs::Box::mbb(points);
+	auto points = chs::mockup::naive_points();
 
-	EXPECT_NO_THROW(const auto cell = chs::Cell<chs::Point>(box, points));
+	EXPECT_NO_THROW(const auto cell = chs::Cell<chs::Point>(points));
 }
 
 TEST(chs, chs_cell_build_random)
@@ -32,9 +29,7 @@ TEST(chs, chs_cell_build_random)
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
 
-		const auto box = chs::Box::mbb(points);
-
-		EXPECT_NO_THROW(const auto cell = chs::Cell<chs::Point>(box, points));
+		EXPECT_NO_THROW(const auto cell = chs::Cell<chs::Point>(points));
 	}
 }
 
@@ -51,8 +46,7 @@ TEST(chs, chs_cell_points_random)
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
 
-		const auto box  = chs::Box::mbb(points);
-		const auto cell = chs::Cell<chs::Point>(box, points);
+		const auto cell = chs::Cell<chs::Point>(points);
 
 		EXPECT_TRUE(are_the_same(points | ranges::views::addressof, cell.points()));
 	}

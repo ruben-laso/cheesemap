@@ -165,11 +165,7 @@ namespace chs
 			const auto num_cells =
 			        ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
 
-			for (const auto i : ranges::views::indices(num_cells))
-			{
-				const auto & indices = global2indices(i, sizes_);
-				cells_.emplace_back(idx2box(indices));
-			}
+			cells_.resize(num_cells);
 
 			// Add points to cells
 			ranges::for_each(points, [this](auto & point) { at(coord2indices(point)).add_point(&point); });

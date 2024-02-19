@@ -15,22 +15,16 @@ namespace chs
 		using Point_ptr_type  = Point_type *;
 		using Rng_points_type = std::vector<Point_ptr_type>;
 
-		Box             box_;
 		Rng_points_type points_;
 
 		public:
-		Cell() = delete;
+		Cell() = default;
 
-		explicit Cell(const Box & box) : box_(box) {}
-
-		Cell(const Box & box, ranges::range auto & points) :
-		        box_(box), points_(points | ranges::views::addressof | ranges::to<Rng_points_type>)
+		Cell(ranges::range auto & points) :
+		        points_(points | ranges::views::addressof | ranges::to<Rng_points_type>)
 		{}
 
 		inline void add_point(Point_ptr_type pnt) { points_.push_back(pnt); }
-
-		[[nodiscard]] inline auto box() const -> const auto & { return box_; }
-		// [[nodiscard]] inline auto box() -> auto & { return box_; }
 
 		[[nodiscard]] inline auto points() const -> const auto & { return points_; }
 		[[nodiscard]] inline auto points() -> auto & { return points_; }

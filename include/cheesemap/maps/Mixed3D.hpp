@@ -73,7 +73,8 @@ namespace chs
 		[[nodiscard]] inline auto indices2global(const std::size_t i, const std::size_t j,
 		                                         const std::size_t k) const
 		{
-			return i * sizes_[1] * sizes_[2] + j * sizes_[2] + k;
+			// return i * sizes_[1] * sizes_[2] + j * sizes_[2] + k;
+			return k * sizes_[0] * sizes_[1] + j * sizes_[0] + i;
 		}
 
 		public:

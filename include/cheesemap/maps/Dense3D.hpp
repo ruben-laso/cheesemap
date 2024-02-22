@@ -64,7 +64,7 @@ namespace chs
 			{
 				auto & cell =
 				        this->cells_[i * this->sizes_[1] * this->sizes_[2] + j * this->sizes_[2] + k];
-				for (auto * point_ptr : cell.points())
+				for (auto * point_ptr : cell)
 				{
 					if (kernel.is_inside(*point_ptr) and filter(*point_ptr))
 					{

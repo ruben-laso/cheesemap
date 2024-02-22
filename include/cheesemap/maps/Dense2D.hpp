@@ -48,7 +48,7 @@ namespace chs
 			                                      ranges::views::closed_indices(min[1], max[1])))
 			{
 				auto & cell = this->cells_[i * this->sizes_[1] + j];
-				for (auto * point_ptr : cell.points())
+				for (auto * point_ptr : cell)
 				{
 					if (kernel.is_inside(*point_ptr) and filter(*point_ptr))
 					{

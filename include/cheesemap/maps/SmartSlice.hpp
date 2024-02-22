@@ -60,7 +60,7 @@ namespace chs::slice
 		{
 			const auto [i, j] = coord2indices(point);
 			const auto idx    = i * sizes_[1] + j;
-			cells_dense_[idx].add_point(&point);
+			cells_dense_[idx].emplace_back(&point);
 		}
 
 		inline void add_point_sparse(Point_type & point)
@@ -76,7 +76,7 @@ namespace chs::slice
 				cells_it = cells_sparse_.find(glb_idx);
 			}
 
-			cells_it->second.add_point(&point);
+			cells_it->second.emplace_back(&point);
 
 			if (density() > SPARSE_TO_DENSE_THRESHOLD) { sparse2dense(); }
 		}

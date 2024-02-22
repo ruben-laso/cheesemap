@@ -52,7 +52,7 @@ namespace chs
 
 				const auto & cell = cell_it->second;
 
-				ranges::for_each(cell.points(), [&](auto * point_ptr) {
+				ranges::for_each(cell, [&](auto * point_ptr) {
 					if (kernel.is_inside(*point_ptr) && filter(*point_ptr))
 					{
 						points.emplace_back(point_ptr);
@@ -125,7 +125,7 @@ namespace chs
 
 					const auto & cell = cell_it->second;
 
-					ranges::for_each(cell.points(), [&](const auto & point_ptr) {
+					ranges::for_each(cell, [&](const auto & point_ptr) {
 						const auto d = distance(p, *point_ptr);
 						if (d < search.radius()) { candidates.emplace_back(d, point_ptr); }
 						else { pre_candidates.emplace(d, point_ptr); }

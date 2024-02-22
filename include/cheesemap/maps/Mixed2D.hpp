@@ -73,7 +73,7 @@ namespace chs
 			{
 				const auto & cell_opt = slice_.at(i, j);
 				if (not cell_opt.has_value()) { continue; }
-				for (auto * point_ptr : cell_opt->get().points())
+				for (auto * point_ptr : cell_opt->get())
 				{
 					if (kernel.is_inside(*point_ptr) and filter(*point_ptr))
 					{
@@ -144,7 +144,7 @@ namespace chs
 					if (not cell_opt.has_value()) { continue; }
 
 					// If the cell is completely inside the search sphere, directly to candidates
-					ranges::for_each(cell_opt->get().points(), [&](const auto & point_ptr) {
+					ranges::for_each(cell_opt->get(), [&](const auto & point_ptr) {
 						const auto d = distance(p, *point_ptr);
 						if (d < search.radius()) { candidates.emplace_back(d, point_ptr); }
 						else { pre_candidates.emplace(d, point_ptr); }

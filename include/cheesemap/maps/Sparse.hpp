@@ -1,9 +1,9 @@
 #pragma once
 
 #include <array>
-#include <unordered_map>
 #include <queue>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 #include <range/v3/all.hpp>
@@ -186,7 +186,7 @@ namespace chs
 
 				auto & cell = cell_it->second;
 
-				cell.add_point(&point);
+				cell.emplace_back(&point);
 			}
 		}
 
@@ -220,7 +220,7 @@ namespace chs
 
 				const auto & cell = cell_it->second;
 
-				for (const auto & point : cell.points())
+				for (const auto & point : cell)
 				{
 					if (kernel.is_inside(*point) and filter(*point)) { points.emplace_back(point); }
 				}
@@ -291,7 +291,7 @@ namespace chs
 					auto & cell = cell_it->second;
 
 					// If the cell is completely inside the search sphere, directly to candidates
-					ranges::for_each(cell.points(), [&](const auto & point_ptr) {
+					ranges::for_each(cell, [&](const auto & point_ptr) {
 						const auto d = distance(p, *point_ptr);
 						if (d < search.radius()) { candidates.emplace_back(d, point_ptr); }
 						else { pre_candidates.emplace(d, point_ptr); }

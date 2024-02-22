@@ -177,7 +177,7 @@ namespace chs
 				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
 			}
 
-			ranges::for_each(points, [&](auto & point) { at(coord2indices(point)).add_point(&point); });
+			ranges::for_each(points, [&](auto & point) { at(coord2indices(point)).emplace_back(&point); });
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>
@@ -204,7 +204,7 @@ namespace chs
 				const auto slice_indices  = global2indices(i, search_dim);
 				const auto global_indices = ranges::views::zip_with(std::plus<>{}, slice_indices, min);
 				const auto & cell         = at(global_indices);
-				for (const auto & point : cell.points())
+				for (const auto & point : cell)
 				{
 					if (kernel.is_inside(*point) and filter(*point)) { points.emplace_back(point); }
 				}
@@ -268,7 +268,7 @@ namespace chs
 					auto & cell = cells_[cell_idx];
 
 					// If the cell is completely inside the search sphere, directly to candidates
-					ranges::for_each(cell.points(), [&](const auto & point_ptr) {
+					ranges::for_each(cell, [&](const auto & point_ptr) {
 						const auto d = distance(p, *point_ptr);
 						if (d < search.radius()) { candidates.emplace_back(d, point_ptr); }
 						else { pre_candidates.emplace(d, point_ptr); }

@@ -10,28 +10,5 @@
 namespace chs
 {
 	template<typename Point_type>
-	class Cell
-	{
-		using Point_ptr_type  = Point_type *;
-		using Rng_points_type = std::vector<Point_ptr_type>;
-
-		Rng_points_type points_;
-
-		public:
-		Cell() = default;
-
-		Cell(ranges::range auto & points) :
-		        points_(points | ranges::views::addressof | ranges::to<Rng_points_type>)
-		{}
-
-		inline void add_point(Point_ptr_type pnt) { points_.push_back(pnt); }
-
-		[[nodiscard]] inline auto points() const -> const auto & { return points_; }
-		[[nodiscard]] inline auto points() -> auto & { return points_; }
-
-		[[nodiscard]] inline auto size() const { return points_.size(); }
-		[[nodiscard]] inline auto empty() const { return points_.empty(); }
-		[[nodiscard]] inline auto begin() const { return points_.begin(); }
-		[[nodiscard]] inline auto end() const { return points_.end(); }
-	};
+	using Cell = std::vector<Point_type *>;
 } // namespace chs

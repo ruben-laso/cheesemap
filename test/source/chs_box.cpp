@@ -46,38 +46,6 @@ TEST(chs, chs_box_max_min)
 	}
 }
 
-TEST(chs, chs_box_center)
-{
-	const auto points = chs::mockup::naive_points();
-
-	const auto box = chs::Box::mbb(points);
-
-	const auto & center = box.center();
-
-	const auto midpoint = chs::Point{ 4.5, 4.5, 4.5 };
-
-	for (const auto i : ranges::views::indices(3U))
-	{
-		EXPECT_DOUBLE_EQ(center[i], midpoint[i]);
-	}
-}
-
-TEST(chs, chs_box_radii)
-{
-	const auto points = chs::mockup::naive_points();
-
-	const auto box = chs::Box::mbb(points);
-
-	const auto & radii = box.radii();
-
-	const auto half = chs::Point{ 4.5, 4.5, 4.5 };
-
-	for (const auto i : ranges::views::indices(3U))
-	{
-		EXPECT_DOUBLE_EQ(radii[i], half[i]);
-	}
-}
-
 TEST(chs, chs_box_corners)
 {
 	const auto points = chs::mockup::naive_points();

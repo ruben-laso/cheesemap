@@ -13,26 +13,20 @@ namespace chs
 {
 	class Box
 	{
-		Point center_{};
-		Point radii_{};
 		Point min_{};
 		Point max_{};
 
 		public:
 		explicit Box(const Point & center, const double radius) :
-		        center_(center),
-		        radii_({ radius, radius, radius }),
-		        min_(center_ - radii_),
-		        max_(center_ + radii_)
+		        min_(center - Point{ radius, radius, radius }),
+		        max_(center + Point{ radius, radius, radius })
 		{}
 
 		explicit Box(const Point & center, const Point & radii) :
-		        center_(center), radii_(radii), min_(center_ - radii_), max_(center_ + radii_)
+		        min_(center - radii), max_(center + radii)
 		{}
 
 		explicit Box(const std::pair<Point, Point> & min_max) :
-		        center_((min_max.first + min_max.second) / 2),
-		        radii_(arma::abs(min_max.second - min_max.first) / 2),
 		        min_(min_max.first),
 		        max_(min_max.second)
 		{}
@@ -46,11 +40,6 @@ namespace chs
 
 		[[nodiscard]] inline auto min() const -> const auto & { return min_; }
 		[[nodiscard]] inline auto max() const -> const auto & { return max_; }
-
-		[[nodiscard]] inline auto center() const -> const auto & { return center_; }
-		[[nodiscard]] inline auto center() -> auto & { return center_; }
-		[[nodiscard]] inline auto radii() const -> const auto & { return radii_; }
-		[[nodiscard]] inline auto radii() -> auto & { return radii_; }
 
 		[[nodiscard]] inline auto corners() const -> std::vector<Point>
 		{

@@ -1,9 +1,17 @@
 # Contributing
 
-<!--
-    Short overview, rules, general guidelines, notes about pull requests and
-    style should go here.
--->
+You are welcome to contribute to this project, just be nice and try to follow the guidelines below.
+
+We try to use the convention of [conventionalcommits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages.
+E.g.:
+```
+feat: new flavour of cheese
+```
+```
+fix: bug in the cheese slicing algorithm
+```
+
+We also try to use `clang-format` to format your code, and `clang-tidy` to check for common mistakes.
 
 ## Code of Conduct
 

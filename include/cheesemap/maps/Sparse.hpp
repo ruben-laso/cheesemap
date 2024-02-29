@@ -248,10 +248,9 @@ namespace chs
 			// Taboo list (to avoid visiting the same cell twice)
 			std::set<std::size_t> taboo;
 
-			auto not_visited = [&](const auto & global_idx) { return not taboo.contains(global_idx); };
-
 			// Do an increasing search
-			double search_radius = ranges::max(resolutions_);
+			const double radius_increment = ranges::max(resolutions_);
+			double       search_radius    = idx2box(coord2indices(p)).closest_distance(p);
 
 			const auto num_cells =
 			        ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
@@ -269,28 +268,30 @@ namespace chs
 
 				chs::kernels::Sphere<Dim> search(p, search_radius);
 
-				// Get the cells to visit (and haven't been visited yet)
-				const auto cells_to_search = indcs_cells_to_search(search);
+				const auto min = coord2indices(search.box().min());
+				const auto max = coord2indices(search.box().max());
 
-				auto to_visit = cells_to_search | ranges::views::transform([&](const auto & indices) {
-					                return indices2global(indices);
-				                }) |
-				                ranges::views::filter(not_visited);
+				const auto search_dim = submap_dimensions(min, max);
 
-				// Visit the cells
-				for (const auto cell_idx : to_visit)
+				const auto search_num_cells = ranges::accumulate(search_dim, std::size_t{ 1 },
+				                                                 std::multiplies<std::size_t>{});
+
+				for (const auto i : ranges::views::indices(search_num_cells))
 				{
-					// Mark the cell as visited
-					taboo.insert(cell_idx);
+					const auto slice_indices = global2indices(i, search_dim);
+					const auto global_indices =
+					        ranges::views::zip_with(std::plus<>{}, slice_indices, min);
+					const auto global_idx = indices2global(global_indices);
 
-					const auto cell_it = cells_.find(cell_idx);
+					if (taboo.contains(global_idx)) { continue; }
+					else { taboo.insert(global_idx); }
+
+					const auto cell_it = cells_.find(global_idx);
 
 					if (cell_it == cells_.end()) { continue; }
 
-					// Get the cell
 					auto & cell = cell_it->second;
 
-					// If the cell is completely inside the search sphere, directly to candidates
 					ranges::for_each(cell, [&](const auto & point_ptr) {
 						const auto d = distance(p, *point_ptr);
 						if (d < search.radius()) { candidates.emplace_back(d, point_ptr); }
@@ -299,7 +300,7 @@ namespace chs
 				}
 
 				// Update the search radius
-				search_radius *= 2.0;
+				search_radius += radius_increment;
 			}
 
 			// Sort the points by distance

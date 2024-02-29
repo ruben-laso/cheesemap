@@ -47,15 +47,6 @@ namespace chs::slice
 		// Use sparse
 		bool use_sparse_ = true;
 
-		[[nodiscard]] inline auto idx2box(const std::size_t i, const std::size_t j) const
-		{
-			Point center{ box_.min()[0] + (static_cast<resolution_type>(i) + 0.5) * resolutions_[0],
-				      box_.min()[1] + (static_cast<resolution_type>(j) + 0.5) * resolutions_[1], 0 };
-			Point radii{ resolutions_[0] / 2, resolutions_[1] / 2, 0 };
-
-			return Box{ center, radii };
-		}
-
 		inline void add_point_dense(Point_type & point)
 		{
 			const auto [i, j] = coord2indices(point);
@@ -170,6 +161,15 @@ namespace chs::slice
 		[[nodiscard]] inline auto indices2global(const std::size_t i, const std::size_t j) const
 		{
 			return i * sizes_[1] + j;
+		}
+
+		[[nodiscard]] inline auto idx2box(const std::size_t i, const std::size_t j) const
+		{
+			Point center{ box_.min()[0] + (static_cast<resolution_type>(i) + 0.5) * resolutions_[0],
+				      box_.min()[1] + (static_cast<resolution_type>(j) + 0.5) * resolutions_[1], 0 };
+			Point radii{ resolutions_[0] / 2, resolutions_[1] / 2, 0 };
+
+			return Box{ center, radii };
 		}
 
 		inline void add_point(Point_type & point)

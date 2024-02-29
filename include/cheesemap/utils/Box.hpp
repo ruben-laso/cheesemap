@@ -18,18 +18,12 @@ namespace chs
 
 		public:
 		explicit Box(const Point & center, const double radius) :
-		        min_(center - Point{ radius, radius, radius }),
-		        max_(center + Point{ radius, radius, radius })
+		        min_(center - Point{ radius, radius, radius }), max_(center + Point{ radius, radius, radius })
 		{}
 
-		explicit Box(const Point & center, const Point & radii) :
-		        min_(center - radii), max_(center + radii)
-		{}
+		explicit Box(const Point & center, const Point & radii) : min_(center - radii), max_(center + radii) {}
 
-		explicit Box(const std::pair<Point, Point> & min_max) :
-		        min_(min_max.first),
-		        max_(min_max.second)
-		{}
+		explicit Box(const std::pair<Point, Point> & min_max) : min_(min_max.first), max_(min_max.second) {}
 
 		template<std::size_t Dim = 3>
 		[[nodiscard]] inline auto is_inside(const Point & p) const -> bool
@@ -75,6 +69,20 @@ namespace chs
 			        });
 
 			return Box{ min_max };
+		}
+
+		[[nodiscard]] auto closest_distance(const Point & p)
+		{
+			const auto dist = [&](const auto & a, const auto & b) { return arma::norm(a - b); };
+
+			const auto dx = std::min(
+			        { dist(p, Point{ min_[0], p[1], p[2] }), dist(p, Point{ max_[0], p[1], p[2] }) });
+			const auto dy = std::min(
+			        { dist(p, Point{ p[0], min_[1], p[2] }), dist(p, Point{ p[0], max_[1], p[2] }) });
+			const auto dz = std::min(
+			        { dist(p, Point{ p[0], p[1], min_[2] }), dist(p, Point{ p[0], p[1], max_[2] }) });
+
+			return std::min({ dx, dy, dz });
 		}
 	};
 } // namespace chs

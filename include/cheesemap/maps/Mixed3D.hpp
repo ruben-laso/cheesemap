@@ -191,7 +191,9 @@ namespace chs
 			        ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
 
 			// Do an increasing search
-			double search_radius = ranges::max(resolutions_);
+			const double radius_increment = ranges::max(resolutions_);
+			const auto [p_i, p_j, p_k]    = coord2indices(p);
+			double search_radius          = idx2box(p_i, p_j, p_k).closest_distance(p);
 
 			while (std::cmp_less(candidates.size(), k_neigh) and std::cmp_less(taboo.size(), num_cells))
 			{
@@ -240,7 +242,7 @@ namespace chs
 				}
 
 				// Update the search radius
-				search_radius *= 2.0;
+				search_radius += radius_increment;
 			}
 
 			// Sort the points by distance

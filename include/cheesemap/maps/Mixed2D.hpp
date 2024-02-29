@@ -110,7 +110,9 @@ namespace chs
 			};
 
 			// Do an increasing search
-			double search_radius = ranges::max(slice_.resolutions());
+			const double radius_increment = ranges::max(slice_.resolutions());
+			const auto [p_i, p_j]         = slice_.coord2indices(p);
+			double search_radius          = slice_.idx2box(p_i, p_j).closest_distance(p);
 
 			while (std::cmp_less(candidates.size(), k) and std::cmp_less(taboo.size(), slice_.size()))
 			{
@@ -152,7 +154,7 @@ namespace chs
 				}
 
 				// Update the search radius
-				search_radius *= 2.0;
+				search_radius += radius_increment;
 			}
 
 			// Sort the points by distance

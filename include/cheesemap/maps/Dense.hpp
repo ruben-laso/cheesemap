@@ -13,6 +13,8 @@
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
 
+#include "cheesemap/utils/Cartesian.hpp"
+
 namespace chs
 {
 	template<typename Point_type, std::size_t Dim = 3>
@@ -192,18 +194,12 @@ namespace chs
 		{
 			std::vector<Point *> points;
 
-			const auto min        = coord2indices(kernel.box().min());
-			const auto max        = coord2indices(kernel.box().max());
-			const auto search_dim = submap_dimensions(min, max);
+			const auto min = coord2indices(kernel.box().min());
+			const auto max = coord2indices(kernel.box().max());
 
-			const auto num_cells =
-			        ranges::accumulate(search_dim, std::size_t{ 1 }, std::multiplies<std::size_t>{});
-
-			for (const auto i : ranges::views::indices(num_cells))
+			for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
 			{
-				const auto slice_indices  = global2indices(i, search_dim);
-				const auto global_indices = ranges::views::zip_with(std::plus<>{}, slice_indices, min);
-				const auto & cell         = at(global_indices);
+				const auto & cell = at(indices);
 				for (const auto & point : cell)
 				{
 					if (kernel.is_inside(*point) and filter(*point)) { points.emplace_back(point); }
@@ -252,18 +248,9 @@ namespace chs
 				const auto min = coord2indices(search.box().min());
 				const auto max = coord2indices(search.box().max());
 
-				const auto search_dim = submap_dimensions(min, max);
-
-				const auto num_cells = ranges::accumulate(search_dim, std::size_t{ 1 },
-				                                          std::multiplies<std::size_t>{});
-
-				for (const auto i : ranges::views::indices(num_cells))
+				for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
 				{
-					const auto slice_indices = global2indices(i, search_dim);
-					const auto global_indices =
-					        ranges::views::zip_with(std::plus<>{}, slice_indices, min);
-					const auto global_idx = indices2global(global_indices);
-
+					const auto global_idx = indices2global(indices);
 					if (taboo.contains(global_idx)) { continue; }
 					else { taboo.insert(global_idx); }
 

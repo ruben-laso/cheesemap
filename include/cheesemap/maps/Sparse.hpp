@@ -15,6 +15,8 @@
 
 #include "cheesemap/concepts/concepts.hpp"
 
+#include "cheesemap/utils/Cartesian.hpp"
+
 namespace chs
 {
 	template<typename Point_type, std::size_t Dim = 3>
@@ -202,19 +204,13 @@ namespace chs
 		{
 			std::vector<Point_type *> points;
 
-			const auto min        = coord2indices(kernel.box().min());
-			const auto max        = coord2indices(kernel.box().max());
-			const auto search_dim = submap_dimensions(min, max);
+			const auto min = coord2indices(kernel.box().min());
+			const auto max = coord2indices(kernel.box().max());
 
-			const auto num_cells =
-			        ranges::accumulate(search_dim, std::size_t{ 1 }, std::multiplies<std::size_t>{});
-
-			for (const auto i : ranges::views::indices(num_cells))
+			for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
 			{
-				const auto slice_indices  = global2indices(i, search_dim);
-				const auto global_indices = ranges::views::zip_with(std::plus<>{}, slice_indices, min);
-
-				const auto cell_it = cells_.find(indices2global(global_indices, sizes_));
+				const auto global_idx = indices2global(indices);
+				const auto cell_it    = cells_.find(global_idx);
 
 				if (cell_it == cells_.end()) { continue; }
 
@@ -271,18 +267,9 @@ namespace chs
 				const auto min = coord2indices(search.box().min());
 				const auto max = coord2indices(search.box().max());
 
-				const auto search_dim = submap_dimensions(min, max);
-
-				const auto search_num_cells = ranges::accumulate(search_dim, std::size_t{ 1 },
-				                                                 std::multiplies<std::size_t>{});
-
-				for (const auto i : ranges::views::indices(search_num_cells))
+				for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
 				{
-					const auto slice_indices = global2indices(i, search_dim);
-					const auto global_indices =
-					        ranges::views::zip_with(std::plus<>{}, slice_indices, min);
-					const auto global_idx = indices2global(global_indices);
-
+					const auto global_idx = indices2global(indices);
 					if (taboo.contains(global_idx)) { continue; }
 					else { taboo.insert(global_idx); }
 
@@ -290,11 +277,11 @@ namespace chs
 
 					if (cell_it == cells_.end()) { continue; }
 
-					auto & cell = cell_it->second;
+					const auto & cell = cell_it->second;
 
-					ranges::for_each(cell, [&](const auto & point_ptr) {
+					ranges::for_each(cell, [&](auto * point_ptr) {
 						const auto d = distance(p, *point_ptr);
-						if (d < search.radius()) { candidates.emplace_back(d, point_ptr); }
+						if (d < search_radius) { candidates.emplace_back(d, point_ptr); }
 						else { pre_candidates.emplace(d, point_ptr); }
 					});
 				}

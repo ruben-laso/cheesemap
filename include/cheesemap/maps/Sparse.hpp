@@ -199,14 +199,50 @@ namespace chs
 			std::set<std::size_t> taboo;
 
 			// Do an increasing search
-			const double radius_increment = ranges::max(resolutions_);
-			double       search_radius    = idx2box(coord2indices(p)).closest_distance(p);
+			const auto default_radius_increment = ranges::max(resolutions_);
 
-			const auto num_cells =
-			        ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
-
-			while (std::cmp_less(candidates.size(), k) and std::cmp_less(taboo.size(), num_cells))
+			// Explore first the neighbors of the cell containing p
+			double search_radius = idx2box(coord2indices(p)).closest_distance(p);
 			{
+				const auto global_idx = indices2global(coord2indices(p));
+				taboo.insert(global_idx);
+
+				const auto cell_it = cells_.find(global_idx);
+
+				if (cell_it != cells_.end())
+				{
+					const auto & cell = cell_it->second;
+					for (const auto & point : cell)
+					{
+						const auto d = distance(p, *point);
+						if (d < search_radius) { candidates.emplace_back(d, point); }
+						else { pre_candidates.emplace(d, point); }
+					}
+				}
+			}
+
+			const auto sphere_volume = [](const auto & r) {
+				static constexpr auto ratio = 4.0 * std::numbers::pi / 3.0;
+				return ratio * std::pow(r, 3);
+			};
+
+			while (std::cmp_less(candidates.size(), k) and std::cmp_less(taboo.size(), cells_.size()))
+			{
+				auto radius_increment = default_radius_increment;
+				// Estimate the new required search radius -> k * density
+				if (not candidates.empty())
+				{
+					const auto density =
+					        static_cast<double>(candidates.size()) / sphere_volume(search_radius);
+					const auto density_based_radius = std::cbrt(static_cast<double>(k) / density);
+
+					if (density_based_radius > search_radius)
+					{
+						radius_increment = density_based_radius - search_radius;
+					}
+				}
+				search_radius += radius_increment;
+
 				// With the new search radius, move pts_and_dist to candidates
 				while (not pre_candidates.empty())
 				{
@@ -233,15 +269,13 @@ namespace chs
 
 					const auto & cell = cell_it->second;
 
-					ranges::for_each(cell, [&](auto * point_ptr) {
-						const auto d = distance(p, *point_ptr);
-						if (d < search_radius) { candidates.emplace_back(d, point_ptr); }
-						else { pre_candidates.emplace(d, point_ptr); }
-					});
+					for (const auto & point : cell)
+					{
+						const auto d = distance(p, *point);
+						if (d < search_radius) { candidates.emplace_back(d, point); }
+						else { pre_candidates.emplace(d, point); }
+					}
 				}
-
-				// Update the search radius
-				search_radius += radius_increment;
 			}
 
 			// Sort the points by distance

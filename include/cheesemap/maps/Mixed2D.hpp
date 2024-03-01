@@ -110,12 +110,49 @@ namespace chs
 			};
 
 			// Do an increasing search
-			const double radius_increment = ranges::max(slice_.resolutions());
-			const auto [p_i, p_j]         = slice_.coord2indices(p);
-			double search_radius          = slice_.idx2box(p_i, p_j).closest_distance(p);
+			const double default_radius_increment = ranges::max(slice_.resolutions());
+
+			// Explore first the neighbors of the cell containing p
+			const auto [p_i, p_j] = slice_.coord2indices(p);
+			double search_radius  = slice_.idx2box(p_i, p_j).closest_distance(p);
+			{
+				const auto global_idx = slice_.indices2global(p_i, p_j);
+				taboo.insert(global_idx);
+
+				const auto & cell_opt = slice_.at(p_i, p_j);
+
+				if (cell_opt.has_value())
+				{
+					ranges::for_each(cell_opt->get(), [&](const auto & point_ptr) {
+						const auto d = distance(p, *point_ptr);
+						if (d < search_radius) { candidates.emplace_back(d, point_ptr); }
+						else { pre_candidates.emplace(d, point_ptr); }
+					});
+				}
+			}
+
+			const auto sphere_volume = [](const auto & r) {
+				static constexpr auto ratio = 4.0 * std::numbers::pi / 3.0;
+				return ratio * std::pow(r, 3);
+			};
 
 			while (std::cmp_less(candidates.size(), k) and std::cmp_less(taboo.size(), slice_.size()))
 			{
+				auto radius_increment = default_radius_increment;
+				// Estimate the new required search radius -> k * density
+				if (not candidates.empty())
+				{
+					const auto density =
+					        static_cast<double>(candidates.size()) / sphere_volume(search_radius);
+					const auto density_based_radius = std::cbrt(static_cast<double>(k) / density);
+
+					if (density_based_radius > search_radius)
+					{
+						radius_increment = density_based_radius - search_radius;
+					}
+				}
+				search_radius += radius_increment;
+
 				// With the new search radius, move pts_and_dist to candidates
 				while (not pre_candidates.empty())
 				{
@@ -152,9 +189,6 @@ namespace chs
 						else { pre_candidates.emplace(d, point_ptr); }
 					});
 				}
-
-				// Update the search radius
-				search_radius += radius_increment;
 			}
 
 			// Sort the points by distance

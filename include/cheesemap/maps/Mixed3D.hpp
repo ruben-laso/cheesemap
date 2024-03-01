@@ -191,12 +191,50 @@ namespace chs
 			        ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
 
 			// Do an increasing search
-			const double radius_increment = ranges::max(resolutions_);
-			const auto [p_i, p_j, p_k]    = coord2indices(p);
-			double search_radius          = idx2box(p_i, p_j, p_k).closest_distance(p);
+			const double default_radius_increment = ranges::max(resolutions_);
+
+			// Explore first the neighbors of the cell containing p
+			const auto [p_i, p_j, p_k] = coord2indices(p);
+			double search_radius       = idx2box(p_i, p_j, p_k).closest_distance(p);
+			{
+				const auto global_idx = indices2global(p_i, p_j, p_k);
+				taboo.insert(global_idx);
+
+				const auto & cell_opt = slices_[p_k].at(p_i, p_j);
+
+				if (cell_opt.has_value())
+				{
+					ranges::for_each(cell_opt->get(), [&](const auto & point_ptr) {
+						const auto d = distance(p, *point_ptr);
+						if (d < search_radius) { candidates.emplace_back(d, point_ptr); }
+						else { pre_candidates.emplace(d, point_ptr); }
+					});
+				}
+			}
+
+			const auto sphere_volume = [](const auto & r) {
+				static constexpr auto ratio = 4.0 * std::numbers::pi / 3.0;
+				return ratio * std::pow(r, 3);
+			};
 
 			while (std::cmp_less(candidates.size(), k_neigh) and std::cmp_less(taboo.size(), num_cells))
 			{
+				auto radius_increment = default_radius_increment;
+				// Estimate the new required search radius -> k * density
+				if (not candidates.empty())
+				{
+					const auto density =
+					        static_cast<double>(candidates.size()) / sphere_volume(search_radius);
+					const auto density_based_radius =
+					        std::cbrt(static_cast<double>(k_neigh) / density);
+
+					if (density_based_radius > search_radius)
+					{
+						radius_increment = density_based_radius - search_radius;
+					}
+				}
+				search_radius += radius_increment;
+
 				// With the new search radius, move pts_and_dist to candidates
 				while (not pre_candidates.empty())
 				{
@@ -232,7 +270,7 @@ namespace chs
 						// If the cell is completely inside the search sphere, directly to candidates
 						ranges::for_each(cell_opt->get(), [&](const auto & point_ptr) {
 							const auto d = distance(p, *point_ptr);
-							if (d < search.radius())
+							if (d < search_radius)
 							{
 								candidates.emplace_back(d, point_ptr);
 							}
@@ -240,9 +278,6 @@ namespace chs
 						});
 					}
 				}
-
-				// Update the search radius
-				search_radius += radius_increment;
 			}
 
 			// Sort the points by distance

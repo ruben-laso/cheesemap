@@ -48,103 +48,57 @@ namespace chs
 		// Cells of the map
 		std::unordered_map<std::size_t, cell_type> cells_;
 
-		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx) const
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto indices2global(const ranges::range auto & indices,
+		                                         std::index_sequence<Is...>) const
 		{
-			Point center{};
-			Point radii{};
+			std::size_t idx = 0;
 
-			for (const auto i : ranges::views::indices(Dim))
-			{
-				center[i] =
-				        box_.min()[i] + (static_cast<resolution_type>(idx[i]) + 0.5) * resolutions_[i];
-				radii[i] = resolutions_[i] / 2;
-			}
+			((idx = idx * sizes_[Is] + indices[Is]), ...);
 
-			return Box{ center, radii };
-		}
-
-		static auto global2indices(const auto idx, const ranges::range auto & sizes)
-		{
-			indices_array indices;
-
-			for (const auto i : ranges::views::indices(Dim))
-			{
-				indices[i] =
-				        (idx / ranges::accumulate(sizes | ranges::views::drop(i + 1), std::size_t{ 1 },
-				                                  std::multiplies<std::size_t>{})) %
-				        sizes[i];
-			}
-
-			return indices;
-		}
-
-		static auto indices2global(const ranges::range auto & indices, const ranges::range auto & sizes)
-		{
-			const auto cell_idx = ranges::accumulate(ranges::views::zip(indices, sizes), std::size_t{ 0 },
-			                                         [](const auto acc, const auto pair_idx_size) {
-				                                         const auto [idx, size] = pair_idx_size;
-				                                         return acc * size + idx;
-			                                         });
-			return cell_idx;
+			return idx;
 		}
 
 		[[nodiscard]] inline auto indices2global(const ranges::range auto & indices) const
 		{
-			return indices2global(indices, sizes_);
+			return indices2global(indices, std::make_index_sequence<Dim>{});
 		}
 
-		[[nodiscard]] inline auto & at(const ranges::range auto & indices)
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx, std::index_sequence<Is...>) const
 		{
-			return cells_[indices2global(indices, sizes_)];
+			Point center{};
+			Point radii{};
+
+			((center[Is] =
+			          box_.min()[Is] + (static_cast<resolution_type>(idx[Is]) + 0.5) * resolutions_[Is]),
+			 ...);
+			((radii[Is] = resolutions_[Is] / 2), ...);
+
+			return Box{ center, radii };
 		}
 
-		[[nodiscard]] inline auto & at(const ranges::range auto & indices) const
+		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx) const
 		{
-			return cells_[indices2global(indices, sizes_)];
+			return idx2box(idx, std::make_index_sequence<Dim>{});
+		}
+
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto coord2indices(const Point & p, std::index_sequence<Is...>) const
+		{
+			indices_array idx;
+
+			Point diff = p - box_.min();
+			((diff[Is] = std::clamp(diff[Is], { 0.0 }, box_.max()[Is] - box_.min()[Is])), ...);
+
+			((idx[Is] = static_cast<std::size_t>(diff[Is] / resolutions_[Is])), ...);
+
+			return idx;
 		}
 
 		[[nodiscard]] inline auto coord2indices(const Point & p) const
 		{
-			indices_array idx;
-			for (const auto i : ranges::views::indices(Dim))
-			{
-				const auto rel = p[i] - box_.min()[i];
-				idx[i] = static_cast<std::size_t>(std::clamp(rel, 0.0, box_.max()[i] - box_.min()[i]) /
-				                                  resolutions_[i]);
-			}
-			return idx;
-		}
-
-		[[nodiscard]] auto submap_dimensions(const ranges::range auto & min,
-		                                     const ranges::range auto & max) const
-		{
-			const auto sizes_view = ranges::views::zip_with(std::minus<>{}, max, min) |
-			                        ranges::views::transform([](const auto i) { return i + 1; });
-			indices_array sizes;
-			ranges::copy(sizes_view, sizes.begin());
-			return sizes;
-		}
-
-		[[nodiscard]] auto indcs_cells_to_search(const auto & kernel) const
-		{
-			std::vector<indices_vector> cells_to_search;
-
-			const auto min = coord2indices(kernel.box().min());
-			const auto max = coord2indices(kernel.box().max());
-
-			const auto search_dim = submap_dimensions(min, max);
-
-			const auto num_cells =
-			        ranges::accumulate(search_dim, std::size_t{ 1 }, std::multiplies<std::size_t>{});
-
-			for (const auto i : ranges::views::indices(num_cells))
-			{
-				const auto slice_indices  = global2indices(i, search_dim);
-				const auto global_indices = ranges::views::zip_with(std::plus<>{}, slice_indices, min);
-				cells_to_search.emplace_back(global_indices | ranges::to_vector);
-			}
-
-			return cells_to_search;
+			return coord2indices(p, std::make_index_sequence<Dim>{});
 		}
 
 		public:
@@ -177,7 +131,7 @@ namespace chs
 			{
 				const auto indices = coord2indices(point);
 
-				const auto global_idx = indices2global(indices, sizes_);
+				const auto global_idx = indices2global(indices);
 
 				auto cell_it = cells_.find(global_idx);
 

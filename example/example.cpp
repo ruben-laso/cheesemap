@@ -29,10 +29,12 @@ auto main(const int argc, const char * const argv[]) -> int
 	start    = std::chrono::high_resolution_clock::now();
 	auto map = chs::Dense<chs::Point, 2>(points, 5.0);
 	// auto map = chs::Dense<chs::Point, 3>(points, 5.0);
-	// auto map = chs::Dense2D<chs::Point>(points, 5.0);
-	// auto map = chs::Dense3D<chs::Point>(points, 5.0);
+	// auto map = chs::Sparse<chs::Point, 2>(points, 5.0);
+	// auto map = chs::Sparse<chs::Point, 3>(points, 5.0);
+	// auto map = chs::Mixed2D<chs::Point>(points, 5.0);
+	// auto map = chs::Mixed3D<chs::Point>(points, 5.0);
 	end      = std::chrono::high_resolution_clock::now();
-	std::cout << "Dense2D map build time: "
+	std::cout << "chs:: map build time: "
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 
 	std::size_t max_neighs = std::numeric_limits<std::size_t>::min();

@@ -7,7 +7,7 @@ project(
         VERSION 0.1.0
         DESCRIPTION "Data structure for point clouds"
         HOMEPAGE_URL "https://github.com/ruben-laso/cheesemap"
-        LANGUAGES NONE
+        LANGUAGES CXX
 )
 
 include(cmake/project-is-top-level.cmake)
@@ -46,7 +46,12 @@ find_package(Armadillo REQUIRED)
 target_link_libraries(
         cheesemap_cheesemap ${warning_guard}
         INTERFACE
-        armadillo
+        ${ARMADILLO_LIBRARIES}
+)
+target_include_directories(
+        cheesemap_cheesemap ${warning_guard}
+        INTERFACE
+        ${ARMADILLO_INCLUDE_DIRS}
 )
 
 # ---- Install rules ----

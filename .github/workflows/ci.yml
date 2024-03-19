@@ -43,6 +43,9 @@ jobs:
       - name: Install C++ compiler(s)
         run: sudo apt-get install clang++-15 g++-11 -q -y
 
+      - name: Install TBB
+        run: sudo apt-get install libtbb-dev -q -y
+
       - name: Install Range-v3
         run: sudo apt install librange-v3-dev -y -q
 
@@ -88,6 +91,9 @@ jobs:
 
       - name: Install CMake
         run: sudo apt-get install cmake -q -y
+
+      - name: Install TBB
+        run: sudo apt-get install libtbb-dev -q -y
 
       - name: Install Range-v3
         run: sudo apt install librange-v3-dev -y -q
@@ -135,6 +141,9 @@ jobs:
 
       - name: Install CMake
         run: sudo apt-get install cmake -q -y
+
+      - name: Install TBB
+        run: sudo apt-get install libtbb-dev -q -y
 
       - name: Install Range-v3
         run: sudo apt install librange-v3-dev -y -q

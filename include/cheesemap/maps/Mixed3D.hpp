@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <execution>
 #include <queue>
 #include <set>
 #include <vector>
@@ -113,7 +114,7 @@ namespace chs
 					const auto [i, j, k] = coord2indices(p);
 					return indices2global(i, j, k);
 				};
-				std::sort(points.begin(), points.end(),
+				std::sort(std::execution::par_unseq, points.begin(), points.end(),
 				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
 			}
 

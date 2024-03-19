@@ -1,6 +1,7 @@
 #pragma once
 
-#include <numbers>
+#include <array>
+#include <execution>
 #include <numeric>
 #include <queue>
 #include <set>
@@ -138,10 +139,11 @@ namespace chs
 			cells_.resize(num_cells);
 
 			// Sort points by global idx (should improve locality when querying)
+
 			if (reorder)
 			{
 				auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
-				std::sort(points.begin(), points.end(),
+				std::sort(std::execution::par_unseq, points.begin(), points.end(),
 				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
 			}
 

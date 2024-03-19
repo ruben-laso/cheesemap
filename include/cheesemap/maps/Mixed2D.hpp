@@ -1,5 +1,6 @@
 #pragma once
 
+#include <execution>
 #include <queue>
 #include <set>
 #include <vector>
@@ -42,8 +43,13 @@ namespace chs
 					const auto [i, j] = slice_.coord2indices(p);
 					return slice_.indices2global(i, j);
 				};
+#ifdef CHS_HAVE_EXECUTION
+				std::sort(std::execution::par_unseq, points.begin(), points.end(),
+				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
+#else
 				std::sort(points.begin(), points.end(),
 				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
+#endif
 			}
 
 			for (auto & point : points)

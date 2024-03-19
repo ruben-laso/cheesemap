@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <execution>
 #include <queue>
 #include <set>
 #include <unordered_map>
@@ -123,7 +124,7 @@ namespace chs
 			if (reorder)
 			{
 				auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
-				std::sort(points.begin(), points.end(),
+				std::sort(std::execution::par_unseq, points.begin(), points.end(),
 				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
 			}
 

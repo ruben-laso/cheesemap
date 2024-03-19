@@ -33,6 +33,14 @@ target_compile_features(cheesemap_cheesemap INTERFACE cxx_std_20)
 
 # ---- Dependencies ----
 
+# Required: tbb (for parallel STL)
+find_package(TBB REQUIRED)
+target_link_libraries(
+        cheesemap_cheesemap ${warning_guard}
+        INTERFACE
+        TBB::tbb
+)
+
 # Required: range-v3
 find_package(range-v3 REQUIRED)
 target_link_libraries(

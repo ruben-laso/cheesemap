@@ -1,15 +1,15 @@
-#include <cheesemap/maps/Mixed3D.hpp>
+#include <cheesemap/maps/Mixed.hpp>
 
 #include <gtest/gtest.h>
 
-#include "mockup_data.hpp"
 #include "generic_tests.hpp"
+#include "mockup_data.hpp"
 
 static constexpr auto CELL_SIZE = 5.0;
 
-auto build_map = [](auto & points) { return chs::Mixed3D<chs::Point>(points, CELL_SIZE, /* reorder = */ false); };
+auto build_map = [](auto & points) { return chs::Mixed<chs::Point, 3>(points, CELL_SIZE, /* reorder = */ false); };
 auto build_map_reorder = [](auto & points) {
-	return chs::Mixed3D<chs::Point>(points, CELL_SIZE, /* reorder = */ true);
+	return chs::Mixed<chs::Point, 3>(points, CELL_SIZE, /* reorder = */ true);
 };
 
 TEST(chs, chs_dense_build)

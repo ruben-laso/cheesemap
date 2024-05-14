@@ -209,8 +209,7 @@ namespace chs
 				const auto & cell  = at(indices);
 				for (const auto & point : cell)
 				{
-					const auto d = chs::distance(p, *point);
-					candidates.insert({ d, point });
+					candidates.insert({ chs::distance(p, *point), point });
 				}
 			}
 
@@ -218,10 +217,7 @@ namespace chs
 			        // not enough candidates or last candidate is outside the search radius
 			        (std::cmp_less(candidates.size(), k) or candidates.back().first > search_radius) and
 			        // we have not visited all the cells
-			        ranges::any_of(ranges::views::zip(taboo_mins, taboo_maxs, sizes_), [](const auto & t) {
-				        const auto & [min, max, size] = t;
-				        return std::cmp_less(max - min, size - 1);
-			        }))
+			        not chs::all_visited<Dim>(taboo_mins, taboo_maxs, sizes_))
 			{
 				// Estimate the new required search radius -> k * density -> Saves time ~86% of the queries
 				if (not candidates.empty() and search_radius > 0)
@@ -245,8 +241,7 @@ namespace chs
 					const auto & cell = at(indices);
 					for (const auto & point : cell)
 					{
-						const auto d = chs::distance(p, *point);
-						candidates.insert({ d, point });
+						candidates.insert({ chs::distance(p, *point), point });
 					}
 				}
 

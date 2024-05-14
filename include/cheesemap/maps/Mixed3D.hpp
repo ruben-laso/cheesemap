@@ -199,9 +199,8 @@ namespace chs
 
 				if (cell_opt.has_value())
 				{
-					ranges::for_each(cell_opt->get(), [&](const auto & point_ptr) {
-						const auto d = chs::distance(p, *point_ptr);
-						candidates.insert({ d, point_ptr });
+					ranges::for_each(cell_opt->get(), [&](const auto & point) {
+						candidates.insert({ chs::distance(p, *point), point });
 					});
 				}
 			}
@@ -211,10 +210,7 @@ namespace chs
 			        (std::cmp_less(candidates.size(), k_neigh) or
 			         candidates.back().first > search_radius) and
 			        // we have not visited all the cells
-			        ranges::any_of(ranges::views::zip(taboo_mins, taboo_maxs, sizes_), [](const auto & t) {
-				        const auto & [min, max, size] = t;
-				        return std::cmp_less(max - min, size - 1);
-			        }))
+			        not chs::all_visited<Dim>(taboo_mins, taboo_maxs, sizes_))
 			{
 				// Estimate the new required search radius -> k * density -> Saves time ~86% of the queries
 				if (not candidates.empty() and search_radius > 0)
@@ -246,9 +242,8 @@ namespace chs
 						if (not cell_opt.has_value()) { continue; }
 
 						// If the cell is completely inside the search sphere, directly to candidates
-						ranges::for_each(cell_opt->get(), [&](const auto & point_ptr) {
-							const auto d = chs::distance(p, *point_ptr);
-							candidates.insert({ d, point_ptr });
+						ranges::for_each(cell_opt->get(), [&](const auto & point) {
+							candidates.insert({ chs::distance(p, *point), point });
 						});
 					}
 				}

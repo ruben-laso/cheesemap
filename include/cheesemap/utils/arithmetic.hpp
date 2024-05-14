@@ -56,4 +56,16 @@ namespace chs
 	{
 		return within_closed_bounds(vals, mins, maxs, std::make_index_sequence<Dim>{});
 	}
+
+	template<std::size_t... Is>
+	[[nodiscard]] inline auto all_visited(const auto & mins, const auto & maxs, const auto & sizes, std::index_sequence<Is...>)
+	{
+		return (std::cmp_greater_equal(maxs[Is] - mins[Is], sizes[Is] - 1) and ...);
+	}
+
+	template<std::size_t Dim = 3>
+	[[nodiscard]] inline auto all_visited(const auto & mins, const auto & maxs, const auto & sizes)
+	{
+		return all_visited(mins, maxs, sizes, std::make_index_sequence<Dim>{});
+	}
 } // namespace chs

@@ -7,7 +7,8 @@
 #include <range/v3/all.hpp>
 #include <utility>
 
-#include "Point.hpp"
+#include "cheesemap/utils/arithmetic.hpp"
+#include "cheesemap/utils/Point.hpp"
 
 namespace chs
 {
@@ -73,14 +74,12 @@ namespace chs
 
 		[[nodiscard]] auto closest_distance(const Point & p)
 		{
-			const auto dist = [&](const auto & a, const auto & b) { return arma::norm(a - b); };
-
-			const auto dx = std::min(
-			        { dist(p, Point{ min_[0], p[1], p[2] }), dist(p, Point{ max_[0], p[1], p[2] }) });
-			const auto dy = std::min(
-			        { dist(p, Point{ p[0], min_[1], p[2] }), dist(p, Point{ p[0], max_[1], p[2] }) });
-			const auto dz = std::min(
-			        { dist(p, Point{ p[0], p[1], min_[2] }), dist(p, Point{ p[0], p[1], max_[2] }) });
+			const auto dx = std::min({ chs::distance(p, Point{ min_[0], p[1], p[2] }),
+			                           chs::distance(p, Point{ max_[0], p[1], p[2] }) });
+			const auto dy = std::min({ chs::distance(p, Point{ p[0], min_[1], p[2] }),
+			                           chs::distance(p, Point{ p[0], max_[1], p[2] }) });
+			const auto dz = std::min({ chs::distance(p, Point{ p[0], p[1], min_[2] }),
+			                           chs::distance(p, Point{ p[0], p[1], max_[2] }) });
 
 			return std::min({ dx, dy, dz });
 		}

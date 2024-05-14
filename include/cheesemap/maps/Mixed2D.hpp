@@ -97,16 +97,6 @@ namespace chs
 
 		[[nodiscard]] inline auto knn(const std::integral auto k, const Point_type & p) const
 		{
-			static constexpr auto max_growth_factor = 1.0; // n times the default increment
-
-			const auto distance = [&](const Point_type & a, const Point_type & b) {
-				double dist = 0.0;
-				dist += (a[0] - b[0]) * (a[0] - b[0]);
-				dist += (a[1] - b[1]) * (a[1] - b[1]);
-				dist += (a[2] - b[2]) * (a[2] - b[2]);
-				return std::sqrt(dist);
-			};
-
 			// Store the points and the distance
 			chs::sorted_vector<std::pair<double, Point_type *>> candidates(k);
 
@@ -124,12 +114,8 @@ namespace chs
 			indices_array taboo_mins;
 			indices_array taboo_maxs;
 
-			auto is_tabooed = [&](const auto i, const auto j) {
-				auto within_bounds = [](const auto idx, const auto min, const auto max) {
-					return std::cmp_greater_equal(idx, min) and std::cmp_less_equal(idx, max);
-				};
-				return within_bounds(i, taboo_mins[0], taboo_maxs[0]) and
-				       within_bounds(j, taboo_mins[1], taboo_maxs[1]);
+			auto is_tabooed = [&](const indices_array & indices) {
+				return chs::within_closed_bounds<Dim>(indices, taboo_mins, taboo_maxs);
 			};
 
 			// Do an increasing search
@@ -151,11 +137,6 @@ namespace chs
 				}
 			}
 
-			const auto sphere_volume = [](const auto & r) {
-				static constexpr auto ratio = 4.0 * std::numbers::pi / 3.0;
-				return ratio * std::pow(r, 3);
-			};
-
 			while (
 			        // not enough candidates or last candidate is outside the search radius
 			        (std::cmp_less(candidates.size(), k) or candidates.back().first > search_radius) and
@@ -166,18 +147,15 @@ namespace chs
 				                       return std::cmp_less(max - min, size - 1);
 			                       }))
 			{
-				auto radius_increment = default_radius_increment;
 				// Estimate the new required search radius -> k * density -> Saves time ~86% of the queries
 				if (not candidates.empty() and search_radius > 0)
 				{
-					const auto density = static_cast<double>(candidates_within_radius()) /
-					                     sphere_volume(search_radius);
-					const auto density_based_radius = std::cbrt(static_cast<double>(k) / density);
-
-					radius_increment = std::min(density_based_radius - search_radius,
-					                            max_growth_factor * default_radius_increment);
+					const auto density_based_radius =
+					        chs::radius_for_density(candidates_within_radius(), search_radius, k);
+					search_radius = std::min(density_based_radius,
+					                         search_radius + default_radius_increment);
 				}
-				search_radius += radius_increment;
+				else { search_radius += default_radius_increment; }
 
 				chs::kernels::Sphere<Dim> search(p, search_radius);
 
@@ -188,7 +166,7 @@ namespace chs
 				     ranges::views::cartesian_product(ranges::views::closed_indices(min_i, max_i),
 				                                      ranges::views::closed_indices(min_j, max_j)))
 				{
-					if (is_tabooed(i, j)) { continue; }
+					if (is_tabooed({ i, j })) { continue; }
 
 					// Get the cell
 					const auto & cell_opt = slice_.at(i, j);

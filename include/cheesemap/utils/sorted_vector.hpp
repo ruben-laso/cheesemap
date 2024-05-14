@@ -24,11 +24,16 @@ namespace chs
 
 		auto insert(const T & value) -> typename base_type::iterator
 		{
+			const auto is_full = not std::cmp_less(this->size(), max_size_);
+
+			// Do not insert the element if the vector is full and cmp(value, back()) is false
+			if (is_full and not comp_(value, this->back())) { return this->end(); }
+
 			auto it = std::lower_bound(this->begin(), this->end(), value, comp_);
 
 			// If the element is found and the vector is not full
-			if (std::cmp_less(this->size(), max_size_)) { it = this->emplace(it, value); }
-			// If the vector is full, check if the element is less than the last element
+			if (not is_full) { it = this->emplace(it, value); }
+			// If the vector is full, displace elements to the right
 			else if (it != this->end())
 			{
 				// Shift elements to the right (last element is lost)
@@ -41,11 +46,16 @@ namespace chs
 
 		auto insert(T && value) -> typename base_type::iterator
 		{
+			const auto is_full = not std::cmp_less(this->size(), max_size_);
+
+			// Do not insert the element if the vector is full and cmp(value, back())
+			if (is_full and not comp_(value, this->back())) { return this->end(); }
+
 			const auto it = std::lower_bound(this->begin(), this->end(), value, comp_);
 
 			// If the element is found and the vector is not full
-			if (std::cmp_less(this->size(), max_size_)) { this->emplace(it, std::move(value)); }
-			// If the vector is full, check if the element is less than the last element
+			if (not is_full) { this->emplace(it, std::move(value)); }
+			// If the vector is full, displace elements to the right
 			else if (it != this->end())
 			{
 				// Shift elements to the right (last element is lost)

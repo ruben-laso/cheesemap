@@ -166,40 +166,49 @@ namespace chs
 
 		[[nodiscard]] inline auto knn(const std::integral auto k_neigh, const Point_type & p) const
 		{
+			static constexpr auto max_growth_factor = 1.0; // n times the default increment
+
 			const auto distance = [&](const Point_type & a, const Point_type & b) {
-				return arma::norm(a - b);
+				double dist = 0.0;
+				dist += (a[0] - b[0]) * (a[0] - b[0]);
+				dist += (a[1] - b[1]) * (a[1] - b[1]);
+				dist += (a[2] - b[2]) * (a[2] - b[2]);
+				return std::sqrt(dist);
 			};
 
 			// Store the points and the distance
-			using dist_ptr = std::pair<double, Point *>;
+			chs::sorted_vector<std::pair<double, Point_type *>> candidates(k_neigh);
 
-			auto cmp_distance = [](const dist_ptr & a, const dist_ptr & b) { return a.first > b.first; };
+			// Search radius starts within the cell containing p
+			const auto [p_i, p_j, p_k] = coord2indices(p);
+			double search_radius       = idx2box(p_i, p_j, p_k).closest_distance(p);
 
-			std::priority_queue<dist_ptr, std::vector<dist_ptr>, decltype(cmp_distance)> pre_candidates(
-			        cmp_distance);
-
-			std::vector<dist_ptr> candidates;
-
-			// Taboo list (to avoid visiting the same cell twice)
-			std::set<std::size_t> taboo;
-
-			auto is_visited = [&](const auto i, const auto j, const auto k) {
-				const auto global_idx = indices2global(i, j, k);
-				return taboo.contains(global_idx);
+			auto candidates_within_radius = [&] {
+				const auto it = std::upper_bound(candidates.begin(), candidates.end(), search_radius,
+				                                 [](auto d, auto & pt) { return d < pt.first; });
+				return it - candidates.begin();
 			};
 
-			const auto num_cells =
-			        ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
+			// Taboo list (to avoid visiting the same cell twice)
+			indices_array taboo_mins;
+			indices_array taboo_maxs;
+
+			auto is_tabooed = [&](const auto i, const auto j, const auto k) {
+				auto within_bounds = [](const auto idx, const auto min, const auto max) {
+					return std::cmp_greater_equal(idx, min) and std::cmp_less_equal(idx, max);
+				};
+				return within_bounds(i, taboo_mins[0], taboo_maxs[0]) and
+				       within_bounds(j, taboo_mins[1], taboo_maxs[1]) and
+				       within_bounds(k, taboo_mins[2], taboo_maxs[2]);
+			};
 
 			// Do an increasing search
 			const double default_radius_increment = ranges::max(resolutions_);
 
 			// Explore first the neighbors of the cell containing p
-			const auto [p_i, p_j, p_k] = coord2indices(p);
-			double search_radius       = idx2box(p_i, p_j, p_k).closest_distance(p);
 			{
-				const auto global_idx = indices2global(p_i, p_j, p_k);
-				taboo.insert(global_idx);
+				taboo_mins = { p_i, p_j, p_k };
+				taboo_maxs = { p_i, p_j, p_k };
 
 				const auto & cell_opt = slices_[p_k].at(p_i, p_j);
 
@@ -207,8 +216,7 @@ namespace chs
 				{
 					ranges::for_each(cell_opt->get(), [&](const auto & point_ptr) {
 						const auto d = distance(p, *point_ptr);
-						if (d < search_radius) { candidates.emplace_back(d, point_ptr); }
-						else { pre_candidates.emplace(d, point_ptr); }
+						candidates.insert({ d, point_ptr });
 					});
 				}
 			}
@@ -218,32 +226,29 @@ namespace chs
 				return ratio * std::pow(r, 3);
 			};
 
-			while (std::cmp_less(candidates.size(), k_neigh) and std::cmp_less(taboo.size(), num_cells))
+			while (
+			        // not enough candidates or last candidate is outside the search radius
+			        (std::cmp_less(candidates.size(), k_neigh) or
+			         candidates.back().first > search_radius) and
+			        // we have not visited all the cells
+			        ranges::any_of(ranges::views::zip(taboo_mins, taboo_maxs, sizes_), [](const auto & t) {
+				        const auto & [min, max, size] = t;
+				        return std::cmp_less(max - min, size - 1);
+			        }))
 			{
 				auto radius_increment = default_radius_increment;
-				// Estimate the new required search radius -> k * density
-				if (not candidates.empty())
+				// Estimate the new required search radius -> k * density -> Saves time ~86% of the queries
+				if (not candidates.empty() and search_radius > 0)
 				{
-					const auto density =
-					        static_cast<double>(candidates.size()) / sphere_volume(search_radius);
+					const auto density = static_cast<double>(candidates_within_radius()) /
+					                     sphere_volume(search_radius);
 					const auto density_based_radius =
 					        std::cbrt(static_cast<double>(k_neigh) / density);
 
-					if (density_based_radius > search_radius)
-					{
-						radius_increment = density_based_radius - search_radius;
-					}
+					radius_increment = std::min(density_based_radius - search_radius,
+					                            max_growth_factor * default_radius_increment);
 				}
 				search_radius += radius_increment;
-
-				// With the new search radius, move pts_and_dist to candidates
-				while (not pre_candidates.empty())
-				{
-					const auto [dist, point] = pre_candidates.top();
-					if (dist > search_radius) { break; }
-					candidates.emplace_back(dist, point);
-					pre_candidates.pop();
-				}
 
 				chs::kernels::Sphere<Dim> search(p, search_radius);
 
@@ -257,11 +262,7 @@ namespace chs
 					             ranges::views::closed_indices(min_i, max_i),
 					             ranges::views::closed_indices(min_j, max_j)))
 					{
-						// Slip already visited cells
-						if (is_visited(i, j, k)) { continue; }
-
-						// Mark the cell as visited
-						taboo.insert(indices2global(i, j, k));
+						if (is_tabooed(i, j, k)) { continue; }
 
 						// Get the cell
 						const auto & cell_opt = slice.at(i, j);
@@ -271,21 +272,16 @@ namespace chs
 						// If the cell is completely inside the search sphere, directly to candidates
 						ranges::for_each(cell_opt->get(), [&](const auto & point_ptr) {
 							const auto d = distance(p, *point_ptr);
-							if (d < search_radius)
-							{
-								candidates.emplace_back(d, point_ptr);
-							}
-							else { pre_candidates.emplace(d, point_ptr); }
+							candidates.insert({ d, point_ptr });
 						});
 					}
 				}
+
+				taboo_mins = { min_i, min_j, min_k };
+				taboo_maxs = { max_i, max_j, max_k };
 			}
 
-			// Sort the points by distance
-			ranges::actions::sort(candidates,
-			                      [](const auto & a, const auto & b) { return a.first < b.first; });
-
-			return candidates | ranges::views::take(k_neigh) | ranges::to_vector;
+			return candidates;
 		}
 	};
 } // namespace chs

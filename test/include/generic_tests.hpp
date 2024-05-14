@@ -112,9 +112,9 @@ namespace chs::test
 
 	void knn(auto && map_build_func)
 	{
-		static constexpr std::size_t num_builds = 1;
+		static constexpr std::size_t num_builds = 20;
 		static constexpr std::size_t num_points = 10'000;
-		static constexpr std::size_t num_checks = 1;
+		static constexpr std::size_t num_checks = 20;
 
 		static constexpr std::size_t max_k = 10;
 

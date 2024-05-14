@@ -138,6 +138,8 @@ namespace chs::slice
 
 		[[nodiscard]] inline auto resolutions() { return resolutions_; }
 
+		[[nodiscard]] inline auto sizes() const -> const auto & { return sizes_; }
+
 		[[nodiscard]] inline auto size() const { return sizes_[0] * sizes_[1]; }
 
 		[[nodiscard]] inline auto density() const

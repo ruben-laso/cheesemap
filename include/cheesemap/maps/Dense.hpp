@@ -178,95 +178,16 @@ namespace chs
 			return points;
 		}
 
-		[[nodiscard]] inline auto knn_v2(const std::integral auto k, const Point_type & p) const
-		{
-			static constexpr auto max_growth_factor = 5.0; // n times the default increment
-
-			const auto distance = [&](const Point_type & a, const Point_type & b) {
-				return arma::norm(a - b);
-			};
-
-			// Store the points and the distance
-			chs::sorted_vector<std::pair<double, Point_type *>> candidates(k);
-
-			// Search radius starts within the cell containing p
-			double search_radius = idx2box(coord2indices(p)).closest_distance(p);
-
-			auto candidates_within_radius = [&] {
-				const auto it = std::upper_bound(candidates.begin(), candidates.end(), search_radius,
-				                                 [](auto d, auto & pt) { return d < pt.first; });
-				return std::distance(candidates.begin(), it);
-			};
-
-			// Taboo list (to avoid visiting the same cell twice)
-			std::set<std::size_t> taboo;
-
-			// Do an increasing search
-			const double default_radius_increment = ranges::max(resolutions_);
-
-			// Explore first the neighbors of the cell containing p
-			{
-				const auto global_idx = indices2global(coord2indices(p));
-				taboo.insert(global_idx);
-				const auto & cell = at(coord2indices(p));
-				for (const auto & point : cell)
-				{
-					const auto d = distance(p, *point);
-					candidates.insert({ d, point });
-				}
-			}
-
-			const auto sphere_volume = [](const auto & r) {
-				static constexpr auto ratio = 4.0 * std::numbers::pi / 3.0;
-				return ratio * std::pow(r, 3);
-			};
-
-			while (std::cmp_less(candidates_within_radius(), k) and
-			       std::cmp_less(taboo.size(), cells_.size()))
-			{
-				auto radius_increment = default_radius_increment;
-				// Estimate the new required search radius -> k * density
-				if (not candidates.empty() and search_radius > 0)
-				{
-					const auto density = static_cast<double>(candidates_within_radius()) /
-					                     sphere_volume(search_radius);
-					const auto density_based_radius = std::cbrt(static_cast<double>(k) / density);
-
-					radius_increment = std::min(density_based_radius - search_radius,
-					                            max_growth_factor * default_radius_increment);
-				}
-				search_radius += radius_increment;
-
-				chs::kernels::Sphere<Dim> search(p, search_radius);
-
-				const auto min = coord2indices(search.box().min());
-				const auto max = coord2indices(search.box().max());
-
-				for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
-				{
-					const auto global_idx = indices2global(indices);
-					if (taboo.contains(global_idx)) { continue; }
-
-					taboo.insert(global_idx);
-
-					const auto & cell = cells_[global_idx];
-					for (const auto & point : cell)
-					{
-						const auto d = distance(p, *point);
-						candidates.insert({ d, point });
-					}
-				}
-			}
-
-			return candidates;
-		}
-
-		[[nodiscard]] inline auto knn_v3(const std::integral auto k, const Point_type & p) const
+		[[nodiscard]] inline auto knn(const std::integral auto k, const Point_type & p) const
 		{
 			static constexpr auto max_growth_factor = 1.0; // n times the default increment
 
 			const auto distance = [&](const Point_type & a, const Point_type & b) {
-				return arma::norm(a - b);
+				double dist = 0.0;
+				dist += (a[0] - b[0]) * (a[0] - b[0]);
+				dist += (a[1] - b[1]) * (a[1] - b[1]);
+				dist += (a[2] - b[2]) * (a[2] - b[2]);
+				return std::sqrt(dist);
 			};
 
 			// Store the points and the distance
@@ -278,7 +199,7 @@ namespace chs
 			auto candidates_within_radius = [&] {
 				const auto it = std::upper_bound(candidates.begin(), candidates.end(), search_radius,
 				                                 [](auto d, auto & pt) { return d < pt.first; });
-				return std::distance(candidates.begin(), it);
+				return it - candidates.begin();
 			};
 
 			// Taboo list (to avoid visiting the same cell twice)
@@ -315,12 +236,14 @@ namespace chs
 				return ratio * std::pow(r, 3);
 			};
 
-			while (candidates.back().first > search_radius and
-			       // Check that we have not visited all the cells
-			       ranges::any_of(ranges::views::zip(taboo_mins, taboo_maxs, sizes_), [](const auto & t) {
-				       const auto & [min, max, size] = t;
-				       return std::cmp_less(max - min, size - 1);
-			       }))
+			while (
+			        // not enough candidates or last candidate is outside the search radius
+			        (std::cmp_less(candidates.size(), k) or candidates.back().first > search_radius) and
+			        // we have not visited all the cells
+			        ranges::any_of(ranges::views::zip(taboo_mins, taboo_maxs, sizes_), [](const auto & t) {
+				        const auto & [min, max, size] = t;
+				        return std::cmp_less(max - min, size - 1);
+			        }))
 			{
 				auto radius_increment = default_radius_increment;
 				// Estimate the new required search radius -> k * density -> Saves time ~86% of the queries
@@ -357,11 +280,6 @@ namespace chs
 			}
 
 			return candidates;
-		}
-
-		[[nodiscard]] inline auto knn(const std::integral auto k, const Point_type & p) const
-		{
-			return knn_v3(k, p);
 		}
 	};
 

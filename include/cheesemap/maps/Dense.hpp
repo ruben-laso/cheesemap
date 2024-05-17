@@ -88,10 +88,12 @@ namespace chs
 		{
 			indices_array idx;
 
-			Point diff = p - box_.min();
-			((diff[Is] = std::clamp(diff[Is], { 0.0 }, box_.max()[Is] - box_.min()[Is])), ...);
+			resolution_type diff;
 
-			((idx[Is] = static_cast<std::size_t>(diff[Is] / resolutions_[Is])), ...);
+			(((diff = p[Is] - box_.min()[Is]),
+			  (diff = std::clamp(diff, 0.0, box_.max()[Is] - box_.min()[Is])),
+			  (idx[Is] = static_cast<std::size_t>(diff / resolutions_[Is]))),
+			 ...);
 
 			return idx;
 		}

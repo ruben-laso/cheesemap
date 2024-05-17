@@ -16,6 +16,17 @@ namespace chs::kernels
 		double     radius_{};
 		chs::Box   box_;
 
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto is_inside(const Point & p, std::index_sequence<Is...>) const -> bool
+		{
+			bool inside = true;
+
+			// This is a fold expression: inside = \forall_i (box.min()[i] <= p[i] <= box.max()[i])
+			((inside &= box_.min()[Is] <= p[Is] and p[Is] <= box_.max()[Is]), ...);
+
+			return inside;
+		}
+
 		public:
 		Cube() = delete;
 		Cube(const Point & center, const double radius) :
@@ -28,10 +39,7 @@ namespace chs::kernels
 
 		[[nodiscard]] inline auto is_inside(const Point & p) const -> bool
 		{
-			const arma::vec3 diff = p - center_;
-
-			return std::all_of(diff.begin(), diff.begin() + Dim,
-			                   [&](const auto x) { return std::abs(x) <= radius_; });
+			return is_inside(p, std::make_index_sequence<Dim>{});
 		}
 	};
 } // namespace chs::kernels

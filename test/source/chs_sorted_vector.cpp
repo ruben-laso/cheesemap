@@ -99,8 +99,8 @@ TEST(chs, sorted_vector_compare_max_size)
 
 TEST(chs, sorted_vector_fuzzy)
 {
-	static constexpr std::size_t NUM_TESTS = 1'000;
-	static constexpr std::size_t MAX_ELEMS = 10'000;
+	static constexpr std::size_t NUM_TESTS = 100'000;
+	static constexpr std::size_t MAX_ELEMS = 50;
 
 	for ([[maybe_unused]] const auto _ : ranges::views::indices(NUM_TESTS))
 	{
@@ -109,14 +109,12 @@ TEST(chs, sorted_vector_fuzzy)
 		chs::sorted_vector<int> sorted_vector(num_elements);
 
 		EXPECT_TRUE(sorted_vector.empty());
-		EXPECT_EQ(sorted_vector.size(), 0);
 
-		for ([[maybe_unused]] const auto i : ranges::views::indices(num_elements))
+		for ([[maybe_unused]] const auto i : ranges::views::indices(2 * num_elements))
 		{
 			sorted_vector.insert(rand_int());
 		}
 
-		EXPECT_FALSE(sorted_vector.empty());
 		EXPECT_EQ(sorted_vector.size(), num_elements);
 		EXPECT_TRUE(std::is_sorted(sorted_vector.begin(), sorted_vector.end()));
 	}

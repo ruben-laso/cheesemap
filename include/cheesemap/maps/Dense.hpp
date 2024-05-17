@@ -16,6 +16,7 @@
 
 #include "cheesemap/utils/arithmetic.hpp"
 #include "cheesemap/utils/Cartesian.hpp"
+#include <cheesemap/utils/arithmetic.hpp>
 
 namespace chs
 {
@@ -184,7 +185,7 @@ namespace chs
 			chs::sorted_vector<std::pair<double, Point_type *>> candidates(k);
 
 			// Search radius starts within the cell containing p
-			double search_radius = idx2box(coord2indices(p)).closest_distance(p);
+			double search_radius = idx2box(coord2indices(p)).distance_to_wall(p, /* inside = */ true);
 
 			auto candidates_within_radius = [&] {
 				const auto it = std::upper_bound(candidates.begin(), candidates.end(), search_radius,
@@ -196,7 +197,7 @@ namespace chs
 			indices_array taboo_mins;
 			indices_array taboo_maxs;
 
-			auto is_tabooed = [&](const auto & indices) {
+			auto is_taboo = [&](const auto & indices) {
 				return chs::within_closed_bounds<Dim>(indices, taboo_mins, taboo_maxs);
 			};
 
@@ -236,9 +237,15 @@ namespace chs
 				const auto min = coord2indices(search.box().min());
 				const auto max = coord2indices(search.box().max());
 
+				// If min == taboo_mins and max == taboo_maxs, we have already visited all the cells
+				if (chs::all_equal<Dim>(min, taboo_mins) and chs::all_equal<Dim>(max, taboo_maxs))
+				{
+					continue;
+				}
+
 				for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
 				{
-					if (is_tabooed(indices)) { continue; }
+					if (is_taboo(indices)) { continue; }
 
 					const auto & cell = at(indices);
 					for (const auto & point : cell)

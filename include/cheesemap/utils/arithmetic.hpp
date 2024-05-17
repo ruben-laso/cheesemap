@@ -5,24 +5,41 @@
 namespace chs
 {
 	template<std::size_t... Is>
-	[[nodiscard]] inline auto distance(const auto & p1, const auto & p2, std::index_sequence<Is...>) -> double
+	[[nodiscard]] inline auto sq_distance(const auto & p1, const auto & p2, std::index_sequence<Is...>) -> double
 	{
 		using T = std::common_type_t<decltype(p1[Is])...>;
 
 		T dist = 0;
 
-		// This is a fold expression: dist = \sum_i (p1[i] - p2[i])^2
+		// This is a fold expression: dist^2 = \sum_i (p1[i] - p2[i])^2
 		((dist += (p1[Is] - p2[Is]) * (p1[Is] - p2[Is])), ...);
 
-		return std::sqrt(dist);
+		return dist;
+	}
+
+	template<std::size_t Dim = 3>
+	[[nodiscard]] inline auto sq_distance(const auto & p1, const auto & p2) -> double
+	{
+		return sq_distance(p1, p2, std::make_index_sequence<Dim>{});
 	}
 
 	template<std::size_t Dim = 3>
 	[[nodiscard]] inline auto distance(const auto & p1, const auto & p2) -> double
 	{
-		return distance(p1, p2, std::make_index_sequence<Dim>{});
+		return std::sqrt(sq_distance(p1, p2, std::make_index_sequence<Dim>{}));
 	}
 
+	template<std::size_t... Is>
+	inline void clamp(auto & val, const auto & min, const auto & max, std::index_sequence<Is...>)
+	{
+		((val[Is] = std::clamp(val[Is], min[Is], max[Is])), ...);
+	}
+
+	template<std::size_t Dim>
+	inline void clamp(auto & vals, const auto & mins, const auto & maxs)
+	{
+		chs::clamp(vals, mins, maxs, std::make_index_sequence<Dim>{});
+	}
 
 	[[nodiscard]] inline auto radius_for_density(const auto & curr_pts, const auto & curr_r, const auto & trgt_pts)
 	{
@@ -58,7 +75,8 @@ namespace chs
 	}
 
 	template<std::size_t... Is>
-	[[nodiscard]] inline auto all_visited(const auto & mins, const auto & maxs, const auto & sizes, std::index_sequence<Is...>)
+	[[nodiscard]] inline auto all_visited(const auto & mins, const auto & maxs, const auto & sizes,
+	                                      std::index_sequence<Is...>)
 	{
 		return (std::cmp_greater_equal(maxs[Is] - mins[Is], sizes[Is] - 1) and ...);
 	}
@@ -67,5 +85,17 @@ namespace chs
 	[[nodiscard]] inline auto all_visited(const auto & mins, const auto & maxs, const auto & sizes)
 	{
 		return all_visited(mins, maxs, sizes, std::make_index_sequence<Dim>{});
+	}
+
+	template<std::size_t... Is>
+	[[nodiscard]] inline auto all_equal(const auto & as, const auto & bs, std::index_sequence<Is...>)
+	{
+		return ((as[Is] == bs[Is]) and ...);
+	}
+
+	template<std::size_t Dim>
+	[[nodiscard]] inline auto all_equal(const auto & as, const auto & bs)
+	{
+		return all_equal(as, bs, std::make_index_sequence<Dim>{});
 	}
 } // namespace chs

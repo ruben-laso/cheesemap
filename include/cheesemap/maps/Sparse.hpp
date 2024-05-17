@@ -2,8 +2,6 @@
 
 #include <array>
 #include <execution>
-#include <queue>
-#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -199,7 +197,7 @@ namespace chs
 			chs::sorted_vector<std::pair<double, Point_type *>> candidates(k);
 
 			// Search radius starts within the cell containing p
-			double search_radius = idx2box(coord2indices(p)).closest_distance(p);
+			double search_radius = idx2box(coord2indices(p)).distance_to_wall(p, /* inside = */ true);
 
 			auto candidates_within_radius = [&] {
 				const auto it = std::upper_bound(candidates.begin(), candidates.end(), search_radius,
@@ -257,6 +255,12 @@ namespace chs
 
 				const auto min = coord2indices(search.box().min());
 				const auto max = coord2indices(search.box().max());
+
+				// If min == taboo_mins and max == taboo_maxs, we have already visited all the cells
+				if (chs::all_equal<Dim>(min, taboo_mins) and chs::all_equal<Dim>(max, taboo_maxs))
+				{
+					continue;
+				}
 
 				for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
 				{

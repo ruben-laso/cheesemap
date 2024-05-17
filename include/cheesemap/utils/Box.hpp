@@ -17,6 +17,18 @@ namespace chs
 		Point min_{};
 		Point max_{};
 
+		[[nodiscard]] auto closest_distance_within(const Point & p)
+		{
+			const auto dx = std::min({ chs::distance(p, Point{ min_[0], p[1], p[2] }),
+			                           chs::distance(p, Point{ max_[0], p[1], p[2] }) });
+			const auto dy = std::min({ chs::distance(p, Point{ p[0], min_[1], p[2] }),
+			                           chs::distance(p, Point{ p[0], max_[1], p[2] }) });
+			const auto dz = std::min({ chs::distance(p, Point{ p[0], p[1], min_[2] }),
+			                           chs::distance(p, Point{ p[0], p[1], max_[2] }) });
+
+			return std::min({ dx, dy, dz });
+		}
+
 		public:
 		explicit Box(const Point & center, const double radius) :
 		        min_(center - Point{ radius, radius, radius }), max_(center + Point{ radius, radius, radius })
@@ -72,16 +84,19 @@ namespace chs
 			return Box{ min_max };
 		}
 
-		[[nodiscard]] auto closest_distance(const Point & p)
+		[[nodiscard]] auto distance(const Point & p)
 		{
-			const auto dx = std::min({ chs::distance(p, Point{ min_[0], p[1], p[2] }),
-			                           chs::distance(p, Point{ max_[0], p[1], p[2] }) });
-			const auto dy = std::min({ chs::distance(p, Point{ p[0], min_[1], p[2] }),
-			                           chs::distance(p, Point{ p[0], max_[1], p[2] }) });
-			const auto dz = std::min({ chs::distance(p, Point{ p[0], p[1], min_[2] }),
-			                           chs::distance(p, Point{ p[0], p[1], max_[2] }) });
-
-			return std::min({ dx, dy, dz });
+			Point n = p;
+			chs::clamp<3>(n, min_, max_);
+			return chs::distance(p, n);
 		}
+
+		[[nodiscard]] auto distance_to_wall(const Point & p, const bool inside)
+		{
+			if (inside) { return closest_distance_within(p); }
+			return distance(p);
+		}
+
+		[[nodiscard]] auto distance_to_wall(const Point & p) { return distance_to_wall(p, is_inside(p)); }
 	};
 } // namespace chs

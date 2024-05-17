@@ -1,7 +1,6 @@
 #pragma once
 
 #include <execution>
-#include <set>
 #include <vector>
 
 #include <range/v3/all.hpp>
@@ -102,7 +101,7 @@ namespace chs
 
 			// Search radius starts within the cell containing p
 			const auto [p_i, p_j] = slice_.coord2indices(p);
-			double search_radius  = slice_.idx2box(p_i, p_j).closest_distance(p);
+			double search_radius  = slice_.idx2box(p_i, p_j).distance_to_wall(p, /* inside = */ true);
 
 			auto candidates_within_radius = [&] {
 				const auto it = std::upper_bound(candidates.begin(), candidates.end(), search_radius,
@@ -157,6 +156,15 @@ namespace chs
 				const auto [min_i, min_j] = slice_.coord2indices(search.box().min());
 				const auto [max_i, max_j] = slice_.coord2indices(search.box().max());
 
+				const indices_array min = { min_i, min_j };
+				const indices_array max = { max_i, max_j };
+
+				// If min == taboo_mins and max == taboo_maxs, we have already visited all the cells
+				if (chs::all_equal<Dim>(min, taboo_mins) and chs::all_equal<Dim>(max, taboo_maxs))
+				{
+					continue;
+				}
+
 				for (const auto [i, j] :
 				     ranges::views::cartesian_product(ranges::views::closed_indices(min_i, max_i),
 				                                      ranges::views::closed_indices(min_j, max_j)))
@@ -174,8 +182,8 @@ namespace chs
 					});
 				}
 
-				taboo_mins = { min_i, min_j };
-				taboo_maxs = { max_i, max_j };
+				taboo_mins = min;
+				taboo_maxs = max;
 			}
 
 			return candidates;

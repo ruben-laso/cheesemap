@@ -171,7 +171,7 @@ namespace chs
 
 			// Search radius starts within the cell containing p
 			const auto [p_i, p_j, p_k] = coord2indices(p);
-			double search_radius       = idx2box(p_i, p_j, p_k).closest_distance(p);
+			double search_radius       = idx2box(p_i, p_j, p_k).distance_to_wall(p, /* inside = */ true);
 
 			auto candidates_within_radius = [&] {
 				const auto it = std::upper_bound(candidates.begin(), candidates.end(), search_radius,
@@ -227,6 +227,15 @@ namespace chs
 				const auto [min_i, min_j, min_k] = coord2indices(search.box().min());
 				const auto [max_i, max_j, max_k] = coord2indices(search.box().max());
 
+				const indices_array min = { min_i, min_j, min_k };
+				const indices_array max = { max_i, max_j, max_k };
+
+				// If min == taboo_mins and max == taboo_maxs, we have already visited all the cells
+				if (chs::all_equal<Dim>(min, taboo_mins) and chs::all_equal<Dim>(max, taboo_maxs))
+				{
+					continue;
+				}
+
 				for (const auto k : ranges::views::closed_indices(min_k, max_k))
 				{
 					const auto & slice = slices_[k];
@@ -248,8 +257,8 @@ namespace chs
 					}
 				}
 
-				taboo_mins = { min_i, min_j, min_k };
-				taboo_maxs = { max_i, max_j, max_k };
+				taboo_mins = min;
+				taboo_maxs = max;
 			}
 
 			return candidates;

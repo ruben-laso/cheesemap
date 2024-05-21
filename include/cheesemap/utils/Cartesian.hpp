@@ -1,9 +1,11 @@
 #pragma once
 
+#include <array>
 #include <utility>
 
 #include <range/v3/view/cartesian_product.hpp>
 #include <range/v3/view/indices.hpp>
+#include <range/v3/view/transform.hpp>
 
 namespace chs
 {

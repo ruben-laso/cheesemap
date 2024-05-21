@@ -14,7 +14,7 @@ namespace chs
 {
 	class Box
 	{
-		static constexpr std::size_t DIM = 3;
+		static constexpr std::size_t Dim = 3;
 
 		Point min_{};
 		Point max_{};
@@ -40,7 +40,6 @@ namespace chs
 
 		explicit Box(const std::pair<Point, Point> & min_max) : min_(min_max.first), max_(min_max.second) {}
 
-		template<std::size_t Dim = 3>
 		[[nodiscard]] inline auto is_inside(const Point & p) const -> bool
 		{
 			return ranges::all_of(ranges::views::indices(Dim),
@@ -88,17 +87,12 @@ namespace chs
 
 		[[nodiscard]] auto distance(const Point & p) const
 		{
-			// Point n = p;
-			// chs::clamp<3>(n, min_, max_);
-
-			std::array<Point::elem_type, 3U> n;
+			std::array<Point::elem_type, Dim> n;
 			n[0] = std::clamp(p[0], min_[0], max_[0]);
 			n[1] = std::clamp(p[1], min_[1], max_[1]);
 			n[2] = std::clamp(p[2], min_[2], max_[2]);
 
-			auto d = chs::distance(p, n);
-
-			return d;
+			return chs::distance(p, n);
 		}
 
 		[[nodiscard]] auto distance_to_wall(const Point & p, const bool inside) const

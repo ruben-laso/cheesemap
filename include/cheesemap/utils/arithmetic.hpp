@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include <cmath>
+
 namespace chs
 {
 	template<std::size_t... Is>

@@ -173,9 +173,10 @@ namespace chs
 			const auto [p_i, p_j, p_k] = coord2indices(p);
 			double search_radius       = idx2box(p_i, p_j, p_k).distance_to_wall(p, /* inside = */ true);
 
-			auto candidates_within_radius = [&] {
-				const auto it = std::upper_bound(candidates.begin(), candidates.end(), search_radius,
-				                                 [](auto d, auto & pt) { return d < pt.first; });
+			auto candidates_within_sq_radius = [&] {
+				const auto sq_radius = search_radius * search_radius;
+				const auto it        = std::upper_bound(candidates.begin(), candidates.end(), sq_radius,
+				                                        [](auto d, auto & pt) { return d < pt.first; });
 				return it - candidates.begin();
 			};
 
@@ -200,7 +201,7 @@ namespace chs
 				if (cell_opt.has_value())
 				{
 					ranges::for_each(cell_opt->get(), [&](const auto & point) {
-						candidates.insert({ chs::distance(p, *point), point });
+						candidates.insert({ chs::sq_distance(p, *point), point });
 					});
 				}
 			}
@@ -208,7 +209,7 @@ namespace chs
 			while (
 			        // not enough candidates or last candidate is outside the search radius
 			        (std::cmp_less(candidates.size(), k_neigh) or
-			         candidates.back().first > search_radius) and
+			         candidates.back().first > (search_radius * search_radius)) and
 			        // we have not visited all the cells
 			        not chs::all_visited<Dim>(taboo_mins, taboo_maxs, sizes_))
 			{
@@ -216,7 +217,7 @@ namespace chs
 				if (not candidates.empty() and search_radius > 0)
 				{
 					const auto density_based_radius = chs::radius_for_density(
-					        candidates_within_radius(), search_radius, k_neigh);
+					        candidates_within_sq_radius(), search_radius, k_neigh);
 					search_radius = std::min(density_based_radius,
 					                         search_radius + default_radius_increment);
 				}
@@ -224,8 +225,8 @@ namespace chs
 
 				chs::kernels::Sphere<Dim> search(p, search_radius);
 
-				const auto [min_i, min_j, min_k] = coord2indices(search.box().min());
-				const auto [max_i, max_j, max_k] = coord2indices(search.box().max());
+				const auto [min_i, min_j, min_k] = coord2indices(p - search_radius);
+				const auto [max_i, max_j, max_k] = coord2indices(p + search_radius);
 
 				const indices_array min = { min_i, min_j, min_k };
 				const indices_array max = { max_i, max_j, max_k };
@@ -252,7 +253,7 @@ namespace chs
 
 						// If the cell is completely inside the search sphere, directly to candidates
 						ranges::for_each(cell_opt->get(), [&](const auto & point) {
-							candidates.insert({ chs::distance(p, *point), point });
+							candidates.insert({ chs::sq_distance(p, *point), point });
 						});
 					}
 				}
@@ -260,6 +261,9 @@ namespace chs
 				taboo_mins = min;
 				taboo_maxs = max;
 			}
+
+			ranges::for_each(candidates,
+			                 [](auto & candidate) { candidate.first = std::sqrt(candidate.first); });
 
 			return candidates;
 		}

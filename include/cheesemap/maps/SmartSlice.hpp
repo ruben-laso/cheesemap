@@ -167,11 +167,11 @@ namespace chs::slice
 
 		[[nodiscard]] inline auto idx2box(const std::size_t i, const std::size_t j) const
 		{
-			Point center{ box_.min()[0] + (static_cast<resolution_type>(i) + 0.5) * resolutions_[0],
-				      box_.min()[1] + (static_cast<resolution_type>(j) + 0.5) * resolutions_[1], 0 };
-			Point radii{ resolutions_[0] / 2, resolutions_[1] / 2, 0 };
+			Point min{ box_.min()[0] + static_cast<resolution_type>(i) * resolutions_[0],
+				   box_.min()[1] + static_cast<resolution_type>(j) * resolutions_[1], box_.min()[2] };
+			Point max{ min[0] + resolutions_[0], min[1] + resolutions_[1], box_.max()[2] };
 
-			return Box{ center, radii };
+			return Box{ std::make_pair(min, max) };
 		}
 
 		inline void add_point(Point_type & point)

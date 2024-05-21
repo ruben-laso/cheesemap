@@ -68,15 +68,14 @@ namespace chs
 		template<std::size_t... Is>
 		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx, std::index_sequence<Is...>) const
 		{
-			Point center{};
-			Point radii{};
+			Point min = box_.min();
+			Point max = box_.max();
 
-			((center[Is] =
-			          box_.min()[Is] + (static_cast<resolution_type>(idx[Is]) + 0.5) * resolutions_[Is]),
+			(((min[Is] = box_.min()[Is] + static_cast<resolution_type>(idx[Is]) * resolutions_[Is]),
+			  (max[Is] = min[Is] + resolutions_[Is])),
 			 ...);
-			((radii[Is] = resolutions_[Is] / 2), ...);
 
-			return Box{ center, radii };
+			return Box(std::make_pair(min, max));
 		}
 
 		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx) const

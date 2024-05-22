@@ -16,7 +16,7 @@
 
 #include "cheesemap/utils/arithmetic.hpp"
 #include "cheesemap/utils/Cartesian.hpp"
-#include <cheesemap/utils/arithmetic.hpp>
+#include "cheesemap/utils/loop.hpp"
 
 namespace chs
 {
@@ -218,8 +218,8 @@ namespace chs
 
 			while (
 			        // not enough candidates or last candidate is outside the search radius
-			        (std::cmp_less(candidates.size(), k) or candidates.back().first >
-			        	(search_radius * search_radius)) and
+			        (std::cmp_less(candidates.size(), k) or
+			         candidates.back().first > (search_radius * search_radius)) and
 			        // we have not visited all the cells
 			        not chs::all_visited<Dim>(taboo_mins, taboo_maxs, sizes_))
 			{
@@ -263,5 +263,4 @@ namespace chs
 			return candidates;
 		}
 	};
-
 } // namespace chs

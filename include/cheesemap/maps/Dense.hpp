@@ -16,7 +16,6 @@
 
 #include "cheesemap/utils/arithmetic.hpp"
 #include "cheesemap/utils/Cartesian.hpp"
-#include "cheesemap/utils/loop.hpp"
 
 namespace chs
 {

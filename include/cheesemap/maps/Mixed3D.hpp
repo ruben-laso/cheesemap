@@ -124,6 +124,8 @@ namespace chs
 				const auto [i, j, k] = coord2indices(point);
 				slices_[k].add_point(point);
 			}
+
+			ranges::for_each(slices_, [](auto & slice) { slice.shrink_to_fit(); });
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>

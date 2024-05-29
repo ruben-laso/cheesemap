@@ -139,7 +139,6 @@ namespace chs
 			cells_.resize(num_cells);
 
 			// Sort points by global idx (should improve locality when querying)
-
 			if (reorder)
 			{
 				auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
@@ -147,7 +146,10 @@ namespace chs
 				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
 			}
 
+			// Assign points to cells
 			ranges::for_each(points, [&](auto & point) { at(coord2indices(point)).emplace_back(&point); });
+			// Shrink to fit (remove unused memory)
+			ranges::for_each(cells_, [](auto & cell) { cell.shrink_to_fit(); });
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>

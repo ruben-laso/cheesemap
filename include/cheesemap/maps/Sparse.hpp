@@ -144,17 +144,10 @@ namespace chs
 
 				const auto global_idx = indices2global(indices);
 
-				auto cell_it = cells_.find(global_idx);
-
-				if (cell_it == cells_.end())
-				{
-					cell_it = cells_.emplace(global_idx, cell_type{}).first;
-				}
-
-				auto & cell = cell_it->second;
-
-				cell.emplace_back(&point);
+				cells_[global_idx].emplace_back(&point);
 			}
+
+			ranges::for_each(cells_, [](auto & cell) { cell.second.shrink_to_fit(); });
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>

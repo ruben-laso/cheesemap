@@ -180,6 +180,18 @@ namespace chs::slice
 			else { add_point_dense(point); }
 		}
 
+		inline void shrink_to_fit()
+		{
+			if (use_sparse_)
+			{
+				ranges::for_each(cells_sparse_, [](auto & cell) { cell.second.shrink_to_fit(); });
+			}
+			else
+			{
+				ranges::for_each(cells_dense_, [](auto & cell) { cell.shrink_to_fit(); });
+			}
+		}
+
 		[[nodiscard]] inline auto at(const std::size_t i, const std::size_t j)
 		        -> std::optional<std::reference_wrapper<cell_type>>
 		{

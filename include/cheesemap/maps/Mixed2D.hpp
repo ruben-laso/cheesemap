@@ -11,6 +11,7 @@
 
 #include "cheesemap/maps/SmartSlice.hpp"
 
+#include "cheesemap/utils/flags.hpp"
 #include "cheesemap/utils/sorted_vector.hpp"
 
 namespace chs
@@ -31,23 +32,29 @@ namespace chs
 		Mixed2D() = default;
 
 		template<typename Points_rng>
-		Mixed2D(Points_rng & points, const resolution_type res, const bool reorder = false) :
-		        Mixed2D(points, dimensions_vector(Dim, res), reorder)
+		Mixed2D(Points_rng & points, const resolution_type res,
+		        const chs::flags::build::flags_t flags = {}) :
+		        Mixed2D(points, dimensions_vector(Dim, res), flags)
 		{}
 
 		template<typename Points_rng>
-		Mixed2D(Points_rng & points, const dimensions_vector & res, const bool reorder = false) :
+		Mixed2D(Points_rng & points, const dimensions_vector & res,
+		        const chs::flags::build::flags_t flags = {}) :
 		        slice_(Box::mbb(points), res)
 		{
 			// Sort points by global idx (should improve locality when querying)
-			if (reorder)
+			if (flags & chs::flags::build::REORDER)
 			{
-				auto proj = [&](const auto & p) {
+				const auto proj = [&](const auto & p) {
 					const auto [i, j] = slice_.coord2indices(p);
 					return slice_.indices2global(i, j);
 				};
-				std::sort(std::execution::par_unseq, points.begin(), points.end(),
-				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
+				const auto cmp = [&](const auto & a, const auto & b) { return proj(a) < proj(b); };
+				if (flags & chs::flags::build::PARALLEL)
+				{
+					std::sort(std::execution::par_unseq, points.begin(), points.end(), cmp);
+				}
+				else { std::sort(points.begin(), points.end(), cmp); }
 			}
 
 			for (auto & point : points)
@@ -55,7 +62,7 @@ namespace chs
 				slice_.add_point(point);
 			}
 
-			slice_.shrink_to_fit();
+			if (flags & chs::flags::build::SHRINK_TO_FIT) { slice_.shrink_to_fit(); }
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>

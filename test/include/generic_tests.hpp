@@ -5,6 +5,9 @@
 
 #include <range/v3/all.hpp>
 
+#include "cheesemap/kernels/Sphere.hpp"
+#include "cheesemap/kernels/Cube.hpp"
+
 namespace chs::test
 {
 	void build_random(auto && map_build_func)

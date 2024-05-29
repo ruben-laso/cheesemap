@@ -2,13 +2,16 @@
 
 #include <gtest/gtest.h>
 
-#include "mockup_data.hpp"
 #include "generic_tests.hpp"
+#include "mockup_data.hpp"
 
 static constexpr auto CELL_SIZE = 5.0;
 
-auto build_map = [](auto & points) { return chs::Sparse<chs::Point>(points, CELL_SIZE, /* reorder = */ false); };
-auto build_map_reorder = [](auto & points) { return chs::Sparse<chs::Point>(points, CELL_SIZE, /* reorder = */ true); };
+static constexpr auto FLAGS         = chs::flags::build::SHRINK_TO_FIT;
+static constexpr auto REORDER_FLAGS = FLAGS | chs::flags::build::REORDER | chs::flags::build::PARALLEL;
+
+auto build_map         = [](auto & points) { return chs::Sparse<chs::Point>(points, CELL_SIZE, FLAGS); };
+auto build_map_reorder = [](auto & points) { return chs::Sparse<chs::Point>(points, CELL_SIZE, REORDER_FLAGS); };
 
 TEST(chs, chs_dense_build)
 {

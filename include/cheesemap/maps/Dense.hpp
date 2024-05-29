@@ -16,6 +16,7 @@
 
 #include "cheesemap/utils/arithmetic.hpp"
 #include "cheesemap/utils/Cartesian.hpp"
+#include "cheesemap/utils/flags.hpp"
 
 namespace chs
 {
@@ -116,12 +117,12 @@ namespace chs
 		Dense() = delete;
 
 		template<ranges::range Points_rng>
-		Dense(Points_rng & points, const resolution_type res, const bool reorder = false) :
-		        Dense(points, dimensions_vector(Dim, res), reorder)
+		Dense(Points_rng & points, const resolution_type res, chs::flags::build::flags_t flags = {}) :
+		        Dense(points, dimensions_vector(Dim, res), flags)
 		{}
 
 		template<ranges::range Points_rng> // requires to be sortable
-		Dense(Points_rng & points, dimensions_vector res, const bool reorder = false) :
+		Dense(Points_rng & points, dimensions_vector res, chs::flags::build::flags_t flags = {}) :
 		        resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
@@ -139,17 +140,24 @@ namespace chs
 			cells_.resize(num_cells);
 
 			// Sort points by global idx (should improve locality when querying)
-			if (reorder)
+			if (flags & chs::flags::build::REORDER)
 			{
-				auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
-				std::sort(std::execution::par_unseq, points.begin(), points.end(),
-				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
+				const auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
+				const auto cmp  = [&](const auto & a, const auto & b) { return proj(a) < proj(b); };
+				if (flags & chs::flags::build::PARALLEL)
+				{
+					std::sort(std::execution::par_unseq, points.begin(), points.end(), cmp);
+				}
+				else { std::sort(points.begin(), points.end(), cmp); }
 			}
 
 			// Assign points to cells
 			ranges::for_each(points, [&](auto & point) { at(coord2indices(point)).emplace_back(&point); });
-			// Shrink to fit (remove unused memory)
-			ranges::for_each(cells_, [](auto & cell) { cell.shrink_to_fit(); });
+
+			if (flags & chs::flags::build::SHRINK_TO_FIT)
+			{
+				ranges::for_each(cells_, [](auto & cell) { cell.shrink_to_fit(); });
+			}
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>

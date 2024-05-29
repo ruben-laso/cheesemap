@@ -2,14 +2,13 @@
 
 #include <array>
 #include <execution>
-#include <queue>
-#include <set>
 #include <vector>
 
 #include <range/v3/all.hpp>
 
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
+#include "cheesemap/utils/flags.hpp"
 
 #include "cheesemap/concepts/concepts.hpp"
 
@@ -74,7 +73,6 @@ namespace chs
 		[[nodiscard]] inline auto indices2global(const std::size_t i, const std::size_t j,
 		                                         const std::size_t k) const
 		{
-			// return i * sizes_[1] * sizes_[2] + j * sizes_[2] + k;
 			return k * sizes_[0] * sizes_[1] + j * sizes_[0] + i;
 		}
 
@@ -82,12 +80,13 @@ namespace chs
 		Mixed3D() = default;
 
 		template<typename Points_rng>
-		Mixed3D(Points_rng & points, const resolution_type res, const bool reorder = false) :
-		        Mixed3D(points, dimensions_vector(Dim, res), reorder)
+		Mixed3D(Points_rng & points, const resolution_type res,
+		        const chs::flags::build::flags_t flags = {}) :
+		        Mixed3D(points, dimensions_vector(Dim, res), flags)
 		{}
 
 		template<typename Points_rng>
-		Mixed3D(Points_rng & points, dimensions_vector res, const bool reorder = false) :
+		Mixed3D(Points_rng & points, dimensions_vector res, const chs::flags::build::flags_t flags = {}) :
 		        resolutions_(std::move(res)), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
@@ -108,14 +107,18 @@ namespace chs
 			}
 
 			// Sort points by global idx (should improve locality when querying)
-			if (reorder)
+			if (flags & chs::flags::build::REORDER)
 			{
-				auto proj = [&](const auto & p) {
+				const auto proj = [&](const auto & p) {
 					const auto [i, j, k] = coord2indices(p);
 					return indices2global(i, j, k);
 				};
-				std::sort(std::execution::par_unseq, points.begin(), points.end(),
-				          [&](const auto & a, const auto & b) { return proj(a) < proj(b); });
+				const auto cmp = [&](const auto & a, const auto & b) { return proj(a) < proj(b); };
+				if (flags & chs::flags::build::PARALLEL)
+				{
+					std::sort(std::execution::par_unseq, points.begin(), points.end(), cmp);
+				}
+				else { std::sort(points.begin(), points.end(), cmp); }
 			}
 
 			// Add the points to the slices
@@ -125,7 +128,10 @@ namespace chs
 				slices_[k].add_point(point);
 			}
 
-			ranges::for_each(slices_, [](auto & slice) { slice.shrink_to_fit(); });
+			if (flags & chs::flags::build::SHRINK_TO_FIT)
+			{
+				ranges::for_each(slices_, [](auto & slice) { slice.shrink_to_fit(); });
+			}
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>

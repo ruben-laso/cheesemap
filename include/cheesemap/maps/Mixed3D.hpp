@@ -231,8 +231,6 @@ namespace chs
 				}
 				else { search_radius += default_radius_increment; }
 
-				chs::kernels::Sphere<Dim> search(p, search_radius);
-
 				const auto [min_i, min_j, min_k] = coord2indices(p - search_radius);
 				const auto [max_i, max_j, max_k] = coord2indices(p + search_radius);
 
@@ -254,12 +252,10 @@ namespace chs
 					{
 						if (is_tabooed({ i, j, k })) { continue; }
 
-						// Get the cell
 						const auto & cell_opt = slice.at(i, j);
 
 						if (not cell_opt.has_value()) { continue; }
 
-						// If the cell is completely inside the search sphere, directly to candidates
 						ranges::for_each(cell_opt->get(), [&](const auto & point) {
 							candidates.insert({ chs::sq_distance(p, *point), point });
 						});

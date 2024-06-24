@@ -5,8 +5,28 @@
 
 #include <cmath>
 
+#include "cheesemap/utils/type_traits.hpp"
+
 namespace chs
 {
+	template<std::size_t N>
+	[[nodiscard]] inline constexpr auto n_array(const auto & val)
+	{
+		std::array<std::decay_t<decltype(val)>, N> arr{};
+		arr.fill(val);
+		return arr;
+	}
+
+	template<std::size_t N>
+	[[nodiscard]] inline constexpr auto n_tuple(const auto & val)
+	{
+		chs::type_traits::tuple<std::decay_t<decltype(val)>, N> tup{};
+		[&]<std::size_t... Is>(std::index_sequence<Is...>) {
+			((std::get<Is>(tup) = val), ...);
+		}(std::make_index_sequence<N>{});
+		return tup;
+	}
+
 	template<std::size_t... Is>
 	[[nodiscard]] inline auto sq_distance(const auto & p1, const auto & p2, std::index_sequence<Is...>) -> double
 	{
@@ -44,6 +64,30 @@ namespace chs
 		chs::clamp(vals, mins, maxs, std::make_index_sequence<Dim>{});
 	}
 
+	template<std::size_t... Is>
+	[[nodiscard]] inline auto max(const auto & a, std::index_sequence<Is...>)
+	{
+		return std::max({ std::get<Is>(a)... });
+	}
+
+	template<std::size_t Dim>
+	[[nodiscard]] inline auto max(const auto & a)
+	{
+		return max(a, std::make_index_sequence<Dim>{});
+	}
+
+	template<std::size_t... Is>
+	[[nodiscard]] inline auto min(const auto & a, std::index_sequence<Is...>)
+	{
+		return std::min({ std::get<Is>(a)... });
+	}
+
+	template<std::size_t Dim>
+	[[nodiscard]] inline auto min(const auto & a)
+	{
+		return min(a, std::make_index_sequence<Dim>{});
+	}
+
 	[[nodiscard]] inline auto radius_for_density(const auto & curr_pts, const auto & curr_r, const auto & trgt_pts)
 	{
 		const auto trgt_radius =
@@ -68,7 +112,7 @@ namespace chs
 	[[nodiscard]] inline auto within_closed_bounds(const auto & vals, const auto & mins, const auto & maxs,
 	                                               std::index_sequence<Is...>)
 	{
-		return (within_closed_bounds(vals[Is], mins[Is], maxs[Is]) and ...);
+		return (within_closed_bounds(std::get<Is>(vals), std::get<Is>(mins), std::get<Is>(maxs)) and ...);
 	}
 
 	template<std::size_t Dim = 3>
@@ -81,7 +125,8 @@ namespace chs
 	[[nodiscard]] inline auto all_visited(const auto & mins, const auto & maxs, const auto & sizes,
 	                                      std::index_sequence<Is...>)
 	{
-		return (std::cmp_greater_equal(maxs[Is] - mins[Is], sizes[Is] - 1) and ...);
+		return (std::cmp_greater_equal(std::get<Is>(maxs) - std::get<Is>(mins), std::get<Is>(sizes) - 1) and
+		        ...);
 	}
 
 	template<std::size_t Dim = 3>
@@ -93,7 +138,7 @@ namespace chs
 	template<std::size_t... Is>
 	[[nodiscard]] inline auto all_equal(const auto & as, const auto & bs, std::index_sequence<Is...>)
 	{
-		return ((as[Is] == bs[Is]) and ...);
+		return ((std::get<Is>(as) == std::get<Is>(bs)) and ...);
 	}
 
 	template<std::size_t Dim>

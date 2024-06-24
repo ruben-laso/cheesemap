@@ -17,6 +17,7 @@
 #include "cheesemap/utils/arithmetic.hpp"
 #include "cheesemap/utils/Cartesian.hpp"
 #include "cheesemap/utils/flags.hpp"
+#include "cheesemap/utils/type_traits.hpp"
 
 namespace chs
 {
@@ -24,61 +25,55 @@ namespace chs
 	class Dense
 	{
 		protected:
-		using resolution_type   = double;
-		using dimensions_array  = std::array<resolution_type, Dim>;
-		using dimensions_vector = std::vector<resolution_type>;
-		using indices_array     = std::array<std::size_t, Dim>;
-		using indices_vector    = std::vector<std::size_t>;
-		using cell_type         = Cell<Point_type>;
+		using resolution_type = double;
+		using dimensions_type = chs::type_traits::tuple<resolution_type, Dim>;
+		using indices_type    = chs::type_traits::tuple<std::size_t, Dim>;
+		using cell_type       = Cell<Point_type>;
 
-		static constexpr dimensions_array DEFAULT_RESOLUTIONS = []() {
-			std::array<resolution_type, Dim> res{};
-			res.fill(1);
-			return res;
-		}();
+		static constexpr dimensions_type DEFAULT_RESOLUTIONS = chs::n_tuple<Dim>(resolution_type{ 1 });
 
 		// Dimension of each cell
-		dimensions_vector resolutions_{ DEFAULT_RESOLUTIONS.begin(), DEFAULT_RESOLUTIONS.end() };
+		dimensions_type resolutions_ = DEFAULT_RESOLUTIONS;
 
 		// Bounding box of the map
 		Box box_;
 
 		// Number of cells of the map on each dimension
-		indices_array sizes_{ Dim };
+		indices_type sizes_;
 
 		// Cells of the map
 		std::vector<cell_type> cells_;
 
 		template<std::size_t... Is>
-		[[nodiscard]] inline auto indices2global(const ranges::range auto & indices,
-		                                         std::index_sequence<Is...>) const
+		[[nodiscard]] inline auto indices2global(const auto & indices, std::index_sequence<Is...>) const
 		{
 			std::size_t idx = 0;
 
-			((idx = idx * sizes_[Is] + indices[Is]), ...);
+			((idx = idx * std::get<Is>(sizes_) + std::get<Is>(indices)), ...);
 
 			return idx;
 		}
 
-		[[nodiscard]] inline auto indices2global(const ranges::range auto & indices) const
+		[[nodiscard]] inline auto indices2global(const auto & indices) const
 		{
 			return indices2global(indices, std::make_index_sequence<Dim>{});
 		}
 
 		template<std::size_t... Is>
-		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx, std::index_sequence<Is...>) const
+		[[nodiscard]] inline auto idx2box(const auto & idx, std::index_sequence<Is...>) const
 		{
 			Point min = box_.min();
 			Point max = box_.max();
 
-			(((min[Is] = box_.min()[Is] + static_cast<resolution_type>(idx[Is]) * resolutions_[Is]),
-			  (max[Is] = min[Is] + resolutions_[Is])),
+			(((min[Is] = box_.min()[Is] +
+			             static_cast<resolution_type>(std::get<Is>(idx)) * std::get<Is>(resolutions_)),
+			  (max[Is] = min[Is] + std::get<Is>(resolutions_))),
 			 ...);
 
 			return Box(std::make_pair(min, max));
 		}
 
-		[[nodiscard]] inline auto idx2box(const ranges::range auto & idx) const
+		[[nodiscard]] inline auto idx2box(const auto & idx) const
 		{
 			return idx2box(idx, std::make_index_sequence<Dim>{});
 		}
@@ -86,13 +81,13 @@ namespace chs
 		template<std::size_t... Is>
 		[[nodiscard]] inline auto coord2indices(const Point & p, std::index_sequence<Is...>) const
 		{
-			indices_array idx;
+			indices_type idx;
 
 			resolution_type diff;
 
 			(((diff = p[Is] - box_.min()[Is]),
 			  (diff = std::clamp(diff, 0.0, box_.max()[Is] - box_.min()[Is])),
-			  (idx[Is] = static_cast<std::size_t>(diff / resolutions_[Is]))),
+			  (std::get<Is>(idx) = static_cast<std::size_t>(diff / std::get<Is>(resolutions_)))),
 			 ...);
 
 			return idx;
@@ -103,39 +98,37 @@ namespace chs
 			return coord2indices(p, std::make_index_sequence<Dim>{});
 		}
 
-		[[nodiscard]] inline auto & at(const ranges::range auto & indices)
-		{
-			return cells_[indices2global(indices)];
-		}
+		[[nodiscard]] inline auto & at(const auto & indices) { return cells_[indices2global(indices)]; }
 
-		[[nodiscard]] inline auto & at(const ranges::range auto & indices) const
-		{
-			return cells_[indices2global(indices)];
-		}
+		[[nodiscard]] inline auto & at(const auto & indices) const { return cells_[indices2global(indices)]; }
 
 		public:
 		Dense() = delete;
 
 		template<ranges::range Points_rng>
 		Dense(Points_rng & points, const resolution_type res, chs::flags::build::flags_t flags = {}) :
-		        Dense(points, dimensions_vector(Dim, res), flags)
+		        Dense(points, dimensions_type{ n_tuple<Dim>(res) }, flags)
 		{}
 
 		template<ranges::range Points_rng> // requires to be sortable
-		Dense(Points_rng & points, dimensions_vector res, chs::flags::build::flags_t flags = {}) :
-		        resolutions_(std::move(res)), box_(Box::mbb(points))
+		Dense(Points_rng & points, dimensions_type res, chs::flags::build::flags_t flags = {}) :
+		        resolutions_(res), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
-			for (const auto i : ranges::views::indices(Dim))
-			{
-				sizes_[i] = static_cast<std::size_t>(
-				                    std::floor((box_.max()[i] - box_.min()[i]) / resolutions_[i])) +
-				            1;
-			}
+			[&]<std::size_t... Is>(std::index_sequence<Is...>) {
+				((std::get<Is>(sizes_) =
+				          static_cast<std::size_t>(std::floor((box_.max()[Is] - box_.min()[Is]) /
+				                                              std::get<Is>(resolutions_))) +
+				          1),
+				 ...);
+			}(std::make_index_sequence<Dim>{});
 
 			// Create cells
-			const auto num_cells =
-			        ranges::accumulate(sizes_, std::size_t{ 1 }, std::multiplies<std::size_t>{});
+			const auto num_cells = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+				std::size_t acc = 1;
+				((acc *= std::get<Is>(sizes_)), ...);
+				return acc;
+			}(std::make_index_sequence<Dim>{});
 
 			cells_.resize(num_cells);
 
@@ -175,7 +168,7 @@ namespace chs
 			const auto min = coord2indices(kernel.box().min());
 			const auto max = coord2indices(kernel.box().max());
 
-			for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
+			for (const auto indices : chs::cartesian<Dim>(min, max))
 			{
 				const auto & cell = at(indices);
 				for (const auto & point : cell)
@@ -203,15 +196,15 @@ namespace chs
 			};
 
 			// Taboo list (to avoid visiting the same cell twice)
-			indices_array taboo_mins;
-			indices_array taboo_maxs;
+			indices_type taboo_mins;
+			indices_type taboo_maxs;
 
 			auto is_taboo = [&](const auto & indices) {
 				return chs::within_closed_bounds<Dim>(indices, taboo_mins, taboo_maxs);
 			};
 
 			// Do an increasing search
-			const double default_radius_increment = ranges::max(resolutions_);
+			const double default_radius_increment = chs::min<Dim>(resolutions_);
 
 			// Explore first the neighbors of the cell containing p
 			{
@@ -251,7 +244,7 @@ namespace chs
 					continue;
 				}
 
-				for (const auto indices : chs::cartesian_as_array<Dim>(min, max))
+				for (const auto indices : chs::cartesian<Dim>(min, max))
 				{
 					if (is_taboo(indices)) { continue; }
 

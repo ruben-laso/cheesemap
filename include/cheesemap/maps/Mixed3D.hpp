@@ -9,10 +9,9 @@
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
 #include "cheesemap/utils/flags.hpp"
+#include "cheesemap/utils/type_traits.hpp"
 
 #include "cheesemap/concepts/concepts.hpp"
-
-#include "cheesemap/kernels/kernels.hpp"
 
 #include "cheesemap/maps/SmartSlice.hpp"
 
@@ -24,96 +23,115 @@ namespace chs
 		protected:
 		static constexpr std::size_t Dim = 3;
 
-		using resolution_type   = double;
-		using dimensions_array  = std::array<resolution_type, Dim>;
-		using dimensions_vector = std::vector<resolution_type>;
-		using indices_array     = std::array<std::size_t, Dim>;
-		using indices_vector    = std::vector<std::size_t>;
-		using cell_type         = Cell<Point_type>;
+		using resolution_type = double;
+		using dimensions_type = chs::type_traits::tuple<resolution_type, Dim>;
+		using indices_type    = chs::type_traits::tuple<std::size_t, Dim>;
 
-		static constexpr dimensions_array DEFAULT_RESOLUTIONS = []() {
-			std::array<resolution_type, Dim> res{};
-			res.fill(1);
-			return res;
-		}();
+		static constexpr dimensions_type DEFAULT_RESOLUTIONS = chs::n_tuple<Dim>(resolution_type{ 1 });
 
 		// Dimension of each cell
-		dimensions_vector resolutions_{ DEFAULT_RESOLUTIONS.begin(), DEFAULT_RESOLUTIONS.end() };
+		dimensions_type resolutions_ = DEFAULT_RESOLUTIONS;
 
 		// Bounding box of the map
 		Box box_;
 
 		// Number of cells of the map on each dimension
-		indices_array sizes_{ Dim };
+		indices_type sizes_;
 
 		std::vector<chs::slice::Smart<Point_type>> slices_;
 
-		[[nodiscard]] inline auto idx2box(const std::size_t i, const std::size_t j, const std::size_t k) const
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto idx2box(const auto & idx, std::index_sequence<Is...>) const
 		{
-			Point center{
-				box_.min()[0] + (static_cast<resolution_type>(i) + 0.5) * resolutions_[0], // x
-				box_.min()[1] + (static_cast<resolution_type>(j) + 0.5) * resolutions_[1], // y
-				box_.min()[2] + (static_cast<resolution_type>(k) + 0.5) * resolutions_[2]  // z
-			};
-			Point radii{ resolutions_[0] / 2, resolutions_[1] / 2, resolutions_[2] / 2 };
+			Point min = box_.min();
+			Point max = box_.max();
 
-			return Box{ center, radii };
+			(((min[Is] = box_.min()[Is] +
+			             static_cast<resolution_type>(std::get<Is>(idx)) * std::get<Is>(resolutions_)),
+			  (max[Is] = min[Is] + std::get<Is>(resolutions_))),
+			 ...);
+
+			return Box(std::make_pair(min, max));
+		}
+
+		[[nodiscard]] inline auto idx2box(const auto & idx) const
+		{
+			return idx2box(idx, std::make_index_sequence<Dim>{});
+		}
+
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto coord2indices(const Point & p, std::index_sequence<Is...>) const
+		{
+			indices_type idx;
+
+			resolution_type diff;
+
+			(((diff = p[Is] - box_.min()[Is]),
+			  (diff = std::clamp(diff, 0.0, box_.max()[Is] - box_.min()[Is])),
+			  (std::get<Is>(idx) = static_cast<std::size_t>(diff / std::get<Is>(resolutions_)))),
+			 ...);
+
+			return idx;
 		}
 
 		[[nodiscard]] inline auto coord2indices(const Point & p) const
 		{
-			const auto rel  = p - box_.min();
-			const auto diff = box_.max() - box_.min();
-			return std::make_tuple(
-			        static_cast<std::size_t>(std::clamp(rel[0], 0.0, diff[0]) / resolutions_[0]),
-			        static_cast<std::size_t>(std::clamp(rel[1], 0.0, diff[1]) / resolutions_[1]),
-			        static_cast<std::size_t>(std::clamp(rel[2], 0.0, diff[2]) / resolutions_[2]));
+			return coord2indices(p, std::make_index_sequence<Dim>{});
 		}
 
-		[[nodiscard]] inline auto indices2global(const std::size_t i, const std::size_t j,
-		                                         const std::size_t k) const
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto indices2global(const auto & indices, std::index_sequence<Is...>) const
 		{
-			return k * sizes_[0] * sizes_[1] + j * sizes_[0] + i;
+			std::size_t idx = 0;
+
+			((idx = idx * std::get<Is>(sizes_) + std::get<Is>(indices)), ...);
+
+			return idx;
+		}
+
+		[[nodiscard]] inline auto indices2global(const auto & indices) const
+		{
+			return indices2global(indices, std::make_index_sequence<Dim>{});
 		}
 
 		public:
 		Mixed3D() = default;
 
 		template<typename Points_rng>
-		Mixed3D(Points_rng & points, const resolution_type res,
-		        const chs::flags::build::flags_t flags = {}) :
-		        Mixed3D(points, dimensions_vector(Dim, res), flags)
+		Mixed3D(Points_rng & points, const resolution_type res, const chs::flags::build::flags_t flags = {}) :
+		        Mixed3D(points, dimensions_type(n_tuple<Dim>(res)), flags)
 		{}
 
 		template<typename Points_rng>
-		Mixed3D(Points_rng & points, dimensions_vector res, const chs::flags::build::flags_t flags = {}) :
-		        resolutions_(std::move(res)), box_(Box::mbb(points))
+		Mixed3D(Points_rng & points, dimensions_type res, const chs::flags::build::flags_t flags = {}) :
+		        resolutions_(res), box_(Box::mbb(points))
 		{
 			// Number of cells in each dimension
-			const Point diff = box_.max() - box_.min();
-			for (const auto i : ranges::views::indices(Dim))
-			{
-				sizes_[i] = static_cast<std::size_t>(std::floor(diff[i] / resolutions_[i])) + 1;
-			}
+			[&]<std::size_t... Is>(std::index_sequence<Is...>) {
+				((std::get<Is>(sizes_) =
+				          static_cast<std::size_t>(std::floor((box_.max()[Is] - box_.min()[Is]) /
+				                                              std::get<Is>(resolutions_))) +
+				          1),
+				 ...);
+			}(std::make_index_sequence<Dim>{});
 
 			// Generate the slices
-			for (const auto k : ranges::views::indices(sizes_[2]))
+			for (const auto k : ranges::views::indices(std::get<2>(sizes_)))
 			{
-				const auto box_min = idx2box(0, 0, k);
-				const auto box_max = idx2box(sizes_[0] - 1, sizes_[1] - 1, k + 1);
+				const auto box_min = idx2box(indices_type{ 0, 0, k });
+				const auto box_max =
+				        idx2box(indices_type(std::get<0>(sizes_) - 1, std::get<1>(sizes_) - 1, k + 1));
 
 				Box slice_box{ std::make_pair(box_min.min(), box_max.max()) };
-				slices_.emplace_back(slice_box, resolutions_);
+				slices_.emplace_back(slice_box, std::make_tuple(std::get<0>(resolutions_),
+				                                                std::get<1>(resolutions_)));
 			}
 
 			// Sort points by global idx (should improve locality when querying)
 			if (flags & chs::flags::build::REORDER)
 			{
-				const auto proj = [&](const auto & p) {
-					const auto [i, j, k] = coord2indices(p);
-					return indices2global(i, j, k);
-				};
-				const auto cmp = [&](const auto & a, const auto & b) { return proj(a) < proj(b); };
+				const auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
+				const auto cmp  = [&](const auto & a, const auto & b) { return proj(a) < proj(b); };
 				if (flags & chs::flags::build::PARALLEL)
 				{
 					std::sort(std::execution::par_unseq, points.begin(), points.end(), cmp);
@@ -153,11 +171,11 @@ namespace chs
 			{
 				auto & slice = slices_[k];
 
-				for (const auto [i, j] :
+				for (const auto indices :
 				     ranges::views::cartesian_product(ranges::views::closed_indices(min_i, max_i),
 				                                      ranges::views::closed_indices(min_j, max_j)))
 				{
-					const auto & cell_opt = slice.at(i, j);
+					const auto & cell_opt = slice.at(indices);
 					if (not cell_opt.has_value()) { continue; }
 					for (auto * point_ptr : cell_opt->get())
 					{
@@ -178,8 +196,7 @@ namespace chs
 			chs::sorted_vector<std::pair<double, Point_type *>> candidates(k_neigh);
 
 			// Search radius starts within the cell containing p
-			const auto [p_i, p_j, p_k] = coord2indices(p);
-			double search_radius       = idx2box(p_i, p_j, p_k).distance_to_wall(p, /* inside = */ true);
+			double search_radius = idx2box(coord2indices(p)).distance_to_wall(p, /* inside = */ true);
 
 			auto candidates_within_sq_radius = [&] {
 				const auto sq_radius = search_radius * search_radius;
@@ -189,22 +206,24 @@ namespace chs
 			};
 
 			// Taboo list (to avoid visiting the same cell twice)
-			indices_array taboo_mins;
-			indices_array taboo_maxs;
+			indices_type taboo_mins;
+			indices_type taboo_maxs;
 
-			auto is_tabooed = [&](const indices_array & indices) {
+			auto is_tabooed = [&](const indices_type & indices) {
 				return chs::within_closed_bounds<Dim>(indices, taboo_mins, taboo_maxs);
 			};
 
 			// Do an increasing search
-			const double default_radius_increment = ranges::max(resolutions_);
+			const double default_radius_increment = chs::min<Dim>(resolutions_);
 
 			// Explore first the neighbors of the cell containing p
 			{
+				const auto [p_i, p_j, p_k] = coord2indices(p);
+
 				taboo_mins = { p_i, p_j, p_k };
 				taboo_maxs = { p_i, p_j, p_k };
 
-				const auto & cell_opt = slices_[p_k].at(p_i, p_j);
+				const auto & cell_opt = slices_[p_k].at({ p_i, p_j });
 
 				if (cell_opt.has_value())
 				{
@@ -231,11 +250,8 @@ namespace chs
 				}
 				else { search_radius += default_radius_increment; }
 
-				const auto [min_i, min_j, min_k] = coord2indices(p - search_radius);
-				const auto [max_i, max_j, max_k] = coord2indices(p + search_radius);
-
-				const indices_array min = { min_i, min_j, min_k };
-				const indices_array max = { max_i, max_j, max_k };
+				const auto min = coord2indices(p - search_radius);
+				const auto max = coord2indices(p + search_radius);
 
 				// If min == taboo_mins and max == taboo_maxs, we have already visited all the cells
 				if (chs::all_equal<Dim>(min, taboo_mins) and chs::all_equal<Dim>(max, taboo_maxs))
@@ -243,16 +259,16 @@ namespace chs
 					continue;
 				}
 
-				for (const auto k : ranges::views::closed_indices(min_k, max_k))
+				for (const auto k : ranges::views::closed_indices(std::get<2>(min), std::get<2>(max)))
 				{
 					const auto & slice = slices_[k];
 					for (const auto [i, j] : ranges::views::cartesian_product(
-					             ranges::views::closed_indices(min_i, max_i),
-					             ranges::views::closed_indices(min_j, max_j)))
+					             ranges::views::closed_indices(std::get<0>(min), std::get<0>(max)),
+					             ranges::views::closed_indices(std::get<1>(min), std::get<1>(max))))
 					{
 						if (is_tabooed({ i, j, k })) { continue; }
 
-						const auto & cell_opt = slice.at(i, j);
+						const auto & cell_opt = slice.at({ i, j });
 
 						if (not cell_opt.has_value()) { continue; }
 

@@ -6,6 +6,7 @@
 
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
+#include "cheesemap/utils/type_traits.hpp"
 
 namespace chs::slice
 {
@@ -17,26 +18,21 @@ namespace chs::slice
 
 		static constexpr auto Dim = 2;
 
-		using resolution_type   = double;
-		using dimensions_array  = std::array<resolution_type, Dim>;
-		using dimensions_vector = std::vector<resolution_type>;
-		using indices_array     = std::array<std::size_t, Dim>;
-		using cell_type         = Cell<Point_type>;
+		using resolution_type = double;
+		using dimensions_type = chs::type_traits::tuple<resolution_type, Dim>;
+		using indices_type    = chs::type_traits::tuple<std::size_t, Dim>;
+		using cell_type       = Cell<Point_type>;
 
-		static constexpr dimensions_array DEFAULT_RESOLUTIONS = []() {
-			std::array<resolution_type, Dim> res{};
-			res.fill(1);
-			return res;
-		}();
+		static constexpr dimensions_type DEFAULT_RESOLUTIONS = chs::n_tuple<Dim>(resolution_type{ 1 });
 
 		// Dimension of each cell
-		dimensions_vector resolutions_{ DEFAULT_RESOLUTIONS.begin(), DEFAULT_RESOLUTIONS.end() };
+		dimensions_type resolutions_ = DEFAULT_RESOLUTIONS;
 
 		// Bounding box of the map
 		Box box_;
 
 		// Number of cells of the map on each dimension
-		indices_array sizes_{ Dim };
+		indices_type sizes_;
 
 		// Cells of the map (using sparse representation)
 		std::unordered_map<std::size_t, cell_type> cells_sparse_;
@@ -50,21 +46,20 @@ namespace chs::slice
 		inline void add_point_dense(Point_type & point)
 		{
 			const auto [i, j] = coord2indices(point);
-			const auto idx    = i * sizes_[1] + j;
+			const auto idx    = i * std::get<1>(sizes_) + j;
 			cells_dense_[idx].emplace_back(&point);
 		}
 
 		inline void add_point_sparse(Point_type & point)
 		{
-			const auto [i, j]  = coord2indices(point);
-			const auto glb_idx = indices2global(i, j);
+			const auto idx = indices2global(coord2indices(point));
 
-			auto cells_it = cells_sparse_.find(glb_idx);
+			auto cells_it = cells_sparse_.find(idx);
 
 			if (cells_it == cells_sparse_.end())
 			{
-				cells_sparse_.emplace(glb_idx, cell_type{});
-				cells_it = cells_sparse_.find(glb_idx);
+				cells_sparse_.emplace(idx, cell_type{});
+				cells_it = cells_sparse_.find(idx);
 			}
 
 			cells_it->second.emplace_back(&point);
@@ -76,10 +71,11 @@ namespace chs::slice
 		{
 			cells_dense_ = {};
 
-			for (const auto [i, j] : ranges::views::cartesian_product(ranges::views::indices(sizes_[0]),
-			                                                          ranges::views::indices(sizes_[1])))
+			for (const auto indices :
+			     ranges::views::cartesian_product(ranges::views::indices(std::get<0>(sizes_)),
+			                                      ranges::views::indices(std::get<1>(sizes_))))
 			{
-				const auto idx = indices2global(i, j);
+				const auto idx = indices2global(indices);
 				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
 				{
 					cells_dense_.emplace_back(std::move(cell_it->second));
@@ -95,13 +91,14 @@ namespace chs::slice
 		{
 			cells_sparse_ = {};
 
-			for (const auto [i, j] : ranges::views::cartesian_product(ranges::views::indices(sizes_[0]),
-			                                                          ranges::views::indices(sizes_[1])))
+			for (const auto indices :
+			     ranges::views::cartesian_product(ranges::views::indices(std::get<0>(sizes_)),
+			                                      ranges::views::indices(std::get<1>(sizes_))))
 			{
-				const auto idx = i * sizes_[1] + j;
+				const auto idx = indices2global(indices);
 				if (not cells_dense_[idx].empty())
 				{
-					cells_sparse_.emplace(indices2global(i, j), cells_dense_[idx]);
+					cells_sparse_.emplace(idx, std::move(cells_dense_[idx]));
 				}
 			}
 
@@ -113,13 +110,14 @@ namespace chs::slice
 		public:
 		Smart() = delete;
 
-		Smart(const Box & box, const resolution_type res) : Smart(box, dimensions_vector(Dim, res)) {}
+		Smart(const Box & box, const resolution_type res) : Smart(box, dimensions_type(chs::n_tuple<Dim>(res)))
+		{}
 
-		Smart(const Box & box, const dimensions_vector & res) :
+		Smart(const Box & box, const dimensions_type & res) :
 		        resolutions_(res),
 		        box_(box),
-		        sizes_({ static_cast<std::size_t>(std::ceil((box.max()[0] - box.min()[0]) / res[0])),
-		                 static_cast<std::size_t>(std::ceil((box.max()[1] - box.min()[1]) / res[1])) })
+		        sizes_({ static_cast<std::size_t>(std::ceil((box.max()[0] - box.min()[0]) / std::get<0>(res))),
+		                 static_cast<std::size_t>(std::ceil((box.max()[1] - box.min()[1]) / std::get<1>(res))) })
 		{}
 
 		template<typename Points_rng>
@@ -140,7 +138,7 @@ namespace chs::slice
 
 		[[nodiscard]] inline auto sizes() const -> const auto & { return sizes_; }
 
-		[[nodiscard]] inline auto size() const { return sizes_[0] * sizes_[1]; }
+		[[nodiscard]] inline auto size() const { return std::get<0>(sizes_) * std::get<1>(sizes_); }
 
 		[[nodiscard]] inline auto density() const
 		{
@@ -151,27 +149,48 @@ namespace chs::slice
 			return 1.0;
 		}
 
-		[[nodiscard]] inline auto coord2indices(const Point_type & p) const
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto coord2indices(const Point & p, std::index_sequence<Is...>) const
 		{
-			const auto rel  = p - box_.min();
-			const auto size = box_.max() - box_.min();
-			const auto i    = static_cast<std::size_t>(std::clamp(rel[0], 0.0, size[0]) / resolutions_[0]);
-			const auto j    = static_cast<std::size_t>(std::clamp(rel[1], 0.0, size[1]) / resolutions_[1]);
-			return std::make_pair(i, j);
+			indices_type idx;
+
+			resolution_type diff;
+
+			(((diff = p[Is] - box_.min()[Is]),
+			  (diff = std::clamp(diff, 0.0, box_.max()[Is] - box_.min()[Is])),
+			  (std::get<Is>(idx) = static_cast<std::size_t>(diff / std::get<Is>(resolutions_)))),
+			 ...);
+
+			return idx;
 		}
 
-		[[nodiscard]] inline auto indices2global(const std::size_t i, const std::size_t j) const
+		[[nodiscard]] inline auto coord2indices(const Point & p) const
 		{
-			return i * sizes_[1] + j;
+			return coord2indices(p, std::make_index_sequence<Dim>{});
 		}
 
-		[[nodiscard]] inline auto idx2box(const std::size_t i, const std::size_t j) const
+		[[nodiscard]] inline auto indices2global(const indices_type & indices) const
 		{
-			Point min{ box_.min()[0] + static_cast<resolution_type>(i) * resolutions_[0],
-				   box_.min()[1] + static_cast<resolution_type>(j) * resolutions_[1], box_.min()[2] };
-			Point max{ min[0] + resolutions_[0], min[1] + resolutions_[1], box_.max()[2] };
+			return std::get<0>(indices) * std::get<1>(sizes_) + std::get<1>(indices);
+		}
 
-			return Box{ std::make_pair(min, max) };
+		template<std::size_t... Is>
+		[[nodiscard]] inline auto idx2box(const auto & idx, std::index_sequence<Is...>) const
+		{
+			Point min = box_.min();
+			Point max = box_.max();
+
+			(((min[Is] = box_.min()[Is] +
+			             static_cast<resolution_type>(std::get<Is>(idx)) * std::get<Is>(resolutions_)),
+			  (max[Is] = min[Is] + std::get<Is>(resolutions_))),
+			 ...);
+
+			return Box(std::make_pair(min, max));
+		}
+
+		[[nodiscard]] inline auto idx2box(const auto & idx) const
+		{
+			return idx2box(idx, std::make_index_sequence<Dim>{});
 		}
 
 		inline void add_point(Point_type & point)
@@ -192,12 +211,13 @@ namespace chs::slice
 			}
 		}
 
-		[[nodiscard]] inline auto at(const std::size_t i, const std::size_t j)
+		[[nodiscard]] inline auto at(const indices_type & indices)
 		        -> std::optional<std::reference_wrapper<cell_type>>
 		{
+			const auto idx = indices2global(indices);
+
 			if (use_sparse_)
 			{
-				const auto idx = indices2global(i, j);
 				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
 				{
 					return { cell_it->second };
@@ -205,15 +225,16 @@ namespace chs::slice
 				return std::nullopt;
 			}
 
-			return { cells_dense_[i * sizes_[1] + j] };
+			return { cells_dense_[idx] };
 		}
 
-		[[nodiscard]] inline auto at(const std::size_t i, const std::size_t j) const
+		[[nodiscard]] inline auto at(const indices_type & indices) const
 		        -> std::optional<std::reference_wrapper<const cell_type>>
 		{
+			const auto idx = indices2global(indices);
+
 			if (use_sparse_)
 			{
-				const auto idx = indices2global(i, j);
 				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
 				{
 					return { cell_it->second };
@@ -221,7 +242,7 @@ namespace chs::slice
 				return std::nullopt;
 			}
 
-			return { cells_dense_[i * sizes_[1] + j] };
+			return { cells_dense_[idx] };
 		}
 	};
 } // namespace chs::slice

@@ -26,14 +26,17 @@ auto main(const int argc, const char * const argv[]) -> int
 	std::cout << "Reading input file time: "
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 
-	start    = std::chrono::high_resolution_clock::now();
-	auto map = chs::Dense<chs::Point, 2>(points, 5.0);
-	// auto map = chs::Dense<chs::Point, 3>(points, 5.0);
-	// auto map = chs::Sparse<chs::Point, 2>(points, 5.0);
-	// auto map = chs::Sparse<chs::Point, 3>(points, 5.0);
-	// auto map = chs::Mixed2D<chs::Point>(points, 5.0);
-	// auto map = chs::Mixed3D<chs::Point>(points, 5.0);
-	end      = std::chrono::high_resolution_clock::now();
+	start = std::chrono::high_resolution_clock::now();
+
+	const auto flags = chs::flags::build::REORDER | chs::flags::build::PARALLEL | chs::flags::build::SHRINK_TO_FIT;
+
+	static constexpr std::size_t Dims = 3;
+
+	auto map = chs::Dense<chs::Point, Dims>(points, 5.0, flags);
+	// auto map = chs::Sparse<chs::Point, Dims>(points, 5.0, flags);
+	// auto map = chs::Mixed<chs::Point, Dims>(points, 5.0, flags);
+
+	end = std::chrono::high_resolution_clock::now();
 	std::cout << "chs:: map build time: "
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 

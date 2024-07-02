@@ -30,11 +30,11 @@ auto main(const int argc, const char * const argv[]) -> int
 
 	const auto flags = chs::flags::build::REORDER | chs::flags::build::PARALLEL | chs::flags::build::SHRINK_TO_FIT;
 
-	static constexpr std::size_t Dims = 3;
+	static constexpr std::size_t Dims = 2;
 
-	auto map = chs::Dense<chs::Point, Dims>(points, 5.0, flags);
+	// auto map = chs::Dense<chs::Point, Dims>(points, 5.0, flags);
 	// auto map = chs::Sparse<chs::Point, Dims>(points, 5.0, flags);
-	// auto map = chs::Mixed<chs::Point, Dims>(points, 5.0, flags);
+	auto map = chs::Mixed<chs::Point, Dims>(points, 5.0, flags);
 
 	end = std::chrono::high_resolution_clock::now();
 	std::cout << "chs:: map build time: "
@@ -68,6 +68,10 @@ auto main(const int argc, const char * const argv[]) -> int
 	std::cout << "Max neighbors: " << max_neighs << '\n';
 	std::cout << "Min neighbors: " << min_neighs << '\n';
 	std::cout << "Average neighbors: " << ave_neighs << '\n';
+
+	const auto bytes = map.mem_footprint();
+	const auto mb = bytes / (1024.0 * 1024.0);
+	std::cout << "Estimated mem. footprint: " << map.mem_footprint() << " Bytes (" << mb << "MB)" << '\n';
 
 	return 0;
 }

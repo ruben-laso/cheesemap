@@ -287,5 +287,12 @@ namespace chs
 
 			return candidates;
 		}
+
+		[[nodiscard]] inline auto mem_footprint() const
+		{
+			return ranges::accumulate(slices_, sizeof(*this), [](auto acc, const auto & slice) {
+				return acc + slice.mem_footprint();
+			});
+		}
 	};
 } // namespace chs

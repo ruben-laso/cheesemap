@@ -244,5 +244,36 @@ namespace chs::slice
 
 			return { cells_dense_[idx] };
 		}
+
+		[[nodiscard]] inline auto mem_footprint() const
+		{
+			std::size_t bytes = sizeof(*this);
+
+			if (use_sparse_)
+			{
+				// From https://stackoverflow.com/a/25438497
+				bytes +=
+				        // data list: #elements * (bucket size + pointers to next)
+				        (cells_sparse_.size() * (sizeof(typename decltype(cells_sparse_)::value_type) +
+				                                 sizeof(void *)) +
+				         // bucket index: #buckets * (pointer to bucket + size)
+				         cells_sparse_.bucket_count() * (sizeof(void *) + sizeof(size_t)));
+
+				for (const auto & [idx, cell] : cells_sparse_)
+				{
+					bytes += cell.capacity() * sizeof(Point_type *);
+				}
+			}
+			else
+			{
+				for (const auto & cell : cells_dense_)
+				{
+					bytes += sizeof(cell);
+					bytes += cell.capacity() * sizeof(Point_type *);
+				}
+			}
+
+			return bytes;
+		}
 	};
 } // namespace chs::slice

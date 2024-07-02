@@ -279,5 +279,24 @@ namespace chs
 
 			return candidates;
 		}
+
+		[[nodiscard]] inline auto mem_footprint() const
+		{
+			std::size_t bytes = sizeof(*this);
+
+			// From https://stackoverflow.com/a/25438497
+			bytes +=
+			        // data list: #elements * (bucket size + pointers to next)
+			        (cells_.size() * (sizeof(typename decltype(cells_)::value_type) + sizeof(void *)) +
+			         // bucket index: #buckets * (pointer to bucket + size)
+			         cells_.bucket_count() * (sizeof(void *) + sizeof(size_t)));
+
+			for (const auto & [idx, cell] : cells_)
+			{
+				bytes += cell.capacity() * sizeof(Point_type *);
+			}
+
+			return bytes;
+		}
 	};
 } // namespace chs

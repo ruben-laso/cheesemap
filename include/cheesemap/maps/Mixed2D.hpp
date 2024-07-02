@@ -187,5 +187,7 @@ namespace chs
 
 			return candidates;
 		}
+
+		[[nodiscard]] inline auto mem_footprint() const { return sizeof(*this) + slice_.mem_footprint(); }
 	};
 } // namespace chs

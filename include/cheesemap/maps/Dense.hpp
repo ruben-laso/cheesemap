@@ -264,5 +264,18 @@ namespace chs
 
 			return candidates;
 		}
+
+		[[nodiscard]] inline auto mem_footprint() const
+		{
+			std::size_t bytes = sizeof(*this);
+
+			for (const auto & cell : cells_)
+            {
+                bytes += sizeof(cell);
+                bytes += cell.capacity() * sizeof(Point_type *);
+            }
+
+			return bytes;
+		}
 	};
 } // namespace chs

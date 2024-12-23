@@ -7,7 +7,7 @@
 
 static constexpr auto CELL_SIZE = 5.0;
 
-static constexpr auto FLAGS = chs::flags::build::SHRINK_TO_FIT;
+static constexpr auto FLAGS         = chs::flags::build::SHRINK_TO_FIT;
 static constexpr auto REORDER_FLAGS = FLAGS | chs::flags::build::REORDER | chs::flags::build::PARALLEL;
 
 auto build_map         = [](auto & points) { return chs::Dense<chs::Point>(points, CELL_SIZE, FLAGS); };

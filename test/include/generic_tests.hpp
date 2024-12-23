@@ -5,8 +5,8 @@
 
 #include <range/v3/all.hpp>
 
-#include "cheesemap/kernels/Sphere.hpp"
 #include "cheesemap/kernels/Cube.hpp"
+#include "cheesemap/kernels/Sphere.hpp"
 
 namespace chs::test
 {

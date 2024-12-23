@@ -22,6 +22,8 @@ namespace chs
 
 		sorted_vector(const std::size_t max_size) : max_size_(max_size) { this->reserve(max_size_); }
 
+		auto full() const { return std::cmp_equal(this->size(), max_size_); }
+
 		auto insert(const T & value) -> typename base_type::iterator
 		{
 			const auto is_full = not std::cmp_less(this->size(), max_size_);

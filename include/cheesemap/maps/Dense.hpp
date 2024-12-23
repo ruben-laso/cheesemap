@@ -270,10 +270,10 @@ namespace chs
 			std::size_t bytes = sizeof(*this);
 
 			for (const auto & cell : cells_)
-            {
-                bytes += sizeof(cell);
-                bytes += cell.capacity() * sizeof(Point_type *);
-            }
+			{
+				bytes += sizeof(cell);
+				bytes += cell.capacity() * sizeof(Point_type *);
+			}
 
 			return bytes;
 		}

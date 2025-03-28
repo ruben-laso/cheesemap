@@ -46,9 +46,4 @@ See the [BUILDING](BUILDING.md) document.
 See the [CONTRIBUTING](CONTRIBUTING.md) document.
 
 # Licensing
-
-<!--
-Please go to https://choosealicense.com/licenses/ and choose a license that
-fits your needs. The recommended license for a project of this type is the
-Boost Software License 1.0.
--->
+The code in this project is licensed under GNU Affero General Public License v3.0. See the [LICENSE](LICENSE) document for more information.

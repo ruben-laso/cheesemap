@@ -269,6 +269,11 @@ namespace chs
 			return candidates;
 		}
 
+		[[nodiscard]] inline auto cells_stored() const
+		{
+			return std::vector<bool>(cells_.size(), true);
+		}
+
 		[[nodiscard]] inline auto points_per_cell() const
 		{
 			std::vector<std::size_t> num_points(cells_.size());

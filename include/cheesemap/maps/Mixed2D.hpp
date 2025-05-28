@@ -192,6 +192,21 @@ namespace chs
 			return candidates;
 		}
 
+		[[nodiscard]] inline auto cells_stored() const
+		{
+			std::vector<bool> cells_stored(chs::product<Dim>(slice_.sizes()), false);
+			for (const auto indices :
+			     ranges::views::cartesian_product(ranges::views::indices(std::get<0>(slice_.sizes())),
+			                                      ranges::views::indices(std::get<1>(slice_.sizes()))))
+
+			{
+				const auto & cell = slice_.at(indices);
+				const auto   idx  = slice_.indices2global(indices);
+				cells_stored[idx] = cell.has_value();
+			}
+			return cells_stored;
+		}
+
 		[[nodiscard]] inline auto points_per_cell() const
 		{
 			const auto sizes = slice_.sizes();

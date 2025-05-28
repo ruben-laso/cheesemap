@@ -36,7 +36,7 @@ auto main(const int argc, const char * const argv[]) -> int
 
 	const auto flags = chs::flags::build::REORDER | chs::flags::build::PARALLEL | chs::flags::build::SHRINK_TO_FIT;
 
-	static constexpr std::size_t Dims = 2;
+	static constexpr std::size_t Dims = 3;
 
 	// auto map = chs::Dense<chs::Point, Dims>(points, 5.0, flags);
 	// auto map = chs::Sparse<chs::Point, Dims>(points, 5.0, flags);
@@ -53,12 +53,22 @@ auto main(const int argc, const char * const argv[]) -> int
 	const auto points_per_cell = map.points_per_cell();
 	const auto non_empty_cells = ranges::count_if(points_per_cell, [](const auto & count) { return count > 0; });
 	std::cout << "Number of cells: " << points_per_cell.size() << '\n';
-	std::cout << "Number of non-empty cells: " << non_empty_cells << " (" << (non_empty_cells * 100.0 / points_per_cell.size()) << "%)\n";
+	std::cout << "Number of non-empty cells: " << non_empty_cells << " ("
+	          << (non_empty_cells * 100.0 / points_per_cell.size()) << "%)\n";
+
+	// Count stored cells
+	const auto stored_cells    = map.cells_stored();
+	const auto no_stored_cells = ranges::count_if(stored_cells, [](const auto & exists) { return exists; });
+	std::cout << "Stored cells: " << no_stored_cells << " (" << (no_stored_cells * 100.0 / points_per_cell.size())
+	          << "%)\n";
+
 	// Compute average points per cell
-	const auto av_points_per_cell = ranges::fold_left(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(points_per_cell.size());
+	const auto av_points_per_cell =
+	        ranges::fold_left(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(points_per_cell.size());
 	std::cout << "Average points per cell: " << av_points_per_cell << '\n';
 	// Average points per non-empty cell
-	const auto av_points_per_non_empty_cell = ranges::fold_left(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(non_empty_cells);
+	const auto av_points_per_non_empty_cell =
+	        ranges::fold_left(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(non_empty_cells);
 	std::cout << "Average points per non-empty cell: " << av_points_per_non_empty_cell << '\n';
 
 	benchmark_query(map, points);

@@ -284,6 +284,16 @@ namespace chs
 			return candidates;
 		}
 
+		[[nodiscard]] inline auto cells_stored() const
+		{
+			std::vector<bool> cells_stored(chs::product<Dim>(sizes_), false);
+			for (const auto & [idx, cell] : cells_)
+			{
+				cells_stored[idx] = true;
+			}
+			return cells_stored;
+		}
+
 		[[nodiscard]] inline auto points_per_cell() const
 		{
 			std::vector<std::size_t> num_points(chs::product<Dim>(sizes_));

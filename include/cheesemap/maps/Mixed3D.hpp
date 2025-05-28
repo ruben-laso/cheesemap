@@ -292,6 +292,23 @@ namespace chs
 			return candidates;
 		}
 
+		[[nodiscard]] inline auto cells_stored() const
+		{
+			std::vector<bool> cells_stored(chs::product<Dim>(sizes_), false);
+			for (const auto & [k, slice] : ranges::views::enumerate(slices_))
+			{
+				for (const auto [i, j] :
+				     ranges::views::cartesian_product(ranges::views::indices(std::get<0>(sizes_)),
+				                                      ranges::views::indices(std::get<1>(sizes_))))
+				{
+					const auto & cell = slice.at({ i, j });
+					const auto  idx = indices2global(std::make_tuple(i, j, k));
+					cells_stored[idx] = cell.has_value();
+				}
+			}
+			return cells_stored;
+		}
+
 		[[nodiscard]] inline auto points_per_cell() const
 		{
 			std::vector<std::size_t> num_points(chs::product<Dim>(sizes_));

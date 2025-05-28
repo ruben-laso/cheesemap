@@ -1,10 +1,11 @@
 #pragma once
 
 #include <array>
-#include <execution>
 #include <vector>
 
 #include <range/v3/all.hpp>
+
+#include "cheesemap/utils/execution.hpp"
 
 #include "cheesemap/concepts/concepts.hpp"
 
@@ -50,11 +51,14 @@ namespace chs
 					return slice_.indices2global(slice_.coord2indices(p));
 				};
 				const auto cmp = [&](const auto & a, const auto & b) { return proj(a) < proj(b); };
+#ifdef __cpp_lib_execution
 				if (flags & chs::flags::build::PARALLEL)
 				{
 					std::sort(std::execution::par_unseq, points.begin(), points.end(), cmp);
 				}
-				else { std::sort(points.begin(), points.end(), cmp); }
+				else
+#endif
+					std::sort(points.begin(), points.end(), cmp);
 			}
 
 			for (auto & point : points)

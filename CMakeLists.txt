@@ -13,6 +13,9 @@ project(
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
 
+# ---- Options ----
+option(cheesemap_PARALLEL "Enable parallelism in cheesemap." ON)
+
 # ---- Declare library ----
 
 add_library(cheesemap_cheesemap INTERFACE)
@@ -33,13 +36,15 @@ target_compile_features(cheesemap_cheesemap INTERFACE cxx_std_20)
 
 # ---- Dependencies ----
 
-# Required: tbb (for parallel STL)
-find_package(TBB REQUIRED)
-target_link_libraries(
-        cheesemap_cheesemap ${warning_guard}
-        INTERFACE
-        TBB::tbb
-)
+# If parallel support: tbb (for parallel STL)
+if (cheesemap_PARALLEL)
+    find_package(TBB REQUIRED)
+    target_link_libraries(
+            cheesemap_cheesemap ${warning_guard}
+            INTERFACE
+            TBB::tbb
+    )
+endif ()
 
 # Required: range-v3
 find_package(range-v3 REQUIRED)

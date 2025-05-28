@@ -1,11 +1,12 @@
 #pragma once
 
 #include <array>
-#include <execution>
 #include <unordered_map>
 #include <vector>
 
 #include <range/v3/all.hpp>
+
+#include "cheesemap/utils/execution.hpp"
 
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
@@ -126,11 +127,14 @@ namespace chs
 			{
 				const auto proj = [&](const auto & p) { return indices2global(coord2indices(p)); };
 				const auto cmp  = [&](const auto & a, const auto & b) { return proj(a) < proj(b); };
+#ifdef __cpp_lib_execution
 				if (flags & chs::flags::build::PARALLEL)
 				{
 					std::sort(std::execution::par_unseq, points.begin(), points.end(), cmp);
 				}
-				else { std::sort(points.begin(), points.end(), cmp); }
+				else
+#endif
+					std::sort(points.begin(), points.end(), cmp);
 			}
 
 			for (auto & point : points)

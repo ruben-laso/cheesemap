@@ -64,11 +64,11 @@ auto main(const int argc, const char * const argv[]) -> int
 
 	// Compute average points per cell
 	const auto av_points_per_cell =
-	        ranges::fold_left(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(points_per_cell.size());
+	        ranges::accumulate(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(points_per_cell.size());
 	std::cout << "Average points per cell: " << av_points_per_cell << '\n';
 	// Average points per non-empty cell
 	const auto av_points_per_non_empty_cell =
-	        ranges::fold_left(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(non_empty_cells);
+	        ranges::accumulate(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(non_empty_cells);
 	std::cout << "Average points per non-empty cell: " << av_points_per_non_empty_cell << '\n';
 
 	benchmark_query(map, points);

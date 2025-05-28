@@ -50,6 +50,15 @@ auto main(const int argc, const char * const argv[]) -> int
 	const auto mb    = bytes / (1024.0 * 1024.0);
 	std::cout << "Estimated mem. footprint: " << map.mem_footprint() << " Bytes (" << mb << "MB)" << '\n';
 
+	const auto points_per_cell = map.points_per_cell();
+	// Compute average points per cell
+	const auto av_points_per_cell = ranges::fold_left(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(points_per_cell.size());
+	std::cout << "Average points per cell: " << av_points_per_cell << '\n';
+	// Average points per non-empty cell
+	const auto non_empty_cells = ranges::count_if(points_per_cell, [](const auto & count) { return count > 0; });
+	const auto av_points_per_non_empty_cell = ranges::fold_left(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(non_empty_cells);
+	std::cout << "Average points per non-empty cell: " << av_points_per_non_empty_cell << '\n';
+
 	benchmark_query(map, points);
 
 	benchmark_knn(map, points);

@@ -280,6 +280,16 @@ namespace chs
 			return candidates;
 		}
 
+		[[nodiscard]] inline auto points_per_cell() const
+		{
+			std::vector<std::size_t> num_points(cells_.size());
+			for (const auto & [idx, cell] : cells_)
+			{
+				num_points[idx] = cell.size();
+			}
+			return num_points;
+		}
+
 		[[nodiscard]] inline auto mem_footprint() const
 		{
 			std::size_t bytes = sizeof(*this);

@@ -288,6 +288,26 @@ namespace chs
 			return candidates;
 		}
 
+		[[nodiscard]] inline auto points_per_cell() const
+		{
+			std::vector<std::size_t> num_points(
+			    std::get<0>(sizes_) * std::get<1>(sizes_) * std::get<2>(sizes_));
+
+			for (const auto & [k, slice] : slices_)
+			{
+				for (const auto [i, j] :
+				     ranges::views::cartesian_product(ranges::views::closed_indices(0, sizes_[0]),
+				                                      ranges::views::closed_indices(0, sizes_[1])))
+				{
+					const auto & cell = slice.at({i, j});
+					const auto idx = indices2global({i, j, k});
+					num_points[idx] = cell.size();
+				}
+			}
+
+			return num_points;
+		}
+
 		[[nodiscard]] inline auto mem_footprint() const
 		{
 			return ranges::accumulate(slices_, sizeof(*this), [](auto acc, const auto & slice) {

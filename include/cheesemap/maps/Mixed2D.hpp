@@ -188,6 +188,25 @@ namespace chs
 			return candidates;
 		}
 
+		[[nodiscard]] inline auto points_per_cell() const
+		{
+			const auto sizes = slice_.sizes();
+
+			std::vector<std::size_t> num_points(std::get<0>(sizes) * std::get<1>(sizes));
+
+			for (const auto indices :
+			     ranges::views::cartesian_product(ranges::views::indices(std::get<0>(sizes)),
+			                                      ranges::views::indices(std::get<1>(sizes))))
+
+			{
+				const auto & cell = slice_.at(indices);
+				const auto   idx  = slice_.indices2global(indices);
+				num_points[idx]   = cell.has_value() ? cell->get().size() : 0;
+			}
+
+			return num_points;
+		}
+
 		[[nodiscard]] inline auto mem_footprint() const { return sizeof(*this) + slice_.mem_footprint(); }
 	};
 } // namespace chs

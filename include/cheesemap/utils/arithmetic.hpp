@@ -88,6 +88,19 @@ namespace chs
 		return min(a, std::make_index_sequence<Dim>{});
 	}
 
+	template<std::size_t... Is>
+	[[nodiscard]] inline auto product(const auto & a, std::index_sequence<Is...>)
+	{
+		return (std::get<Is>(a) * ...);
+	}
+
+	template<std::size_t Dim>
+	[[nodiscard]] inline auto product(const auto & a)
+	{
+		return product(a, std::make_index_sequence<Dim>{});
+	}
+
+
 	[[nodiscard]] inline auto radius_for_density(const auto & curr_pts, const auto & curr_r, const auto & trgt_pts)
 	{
 		const auto trgt_radius =

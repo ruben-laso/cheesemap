@@ -294,18 +294,17 @@ namespace chs
 
 		[[nodiscard]] inline auto points_per_cell() const
 		{
-			std::vector<std::size_t> num_points(
-			    std::get<0>(sizes_) * std::get<1>(sizes_) * std::get<2>(sizes_));
+			std::vector<std::size_t> num_points(chs::product<Dim>(sizes_));
 
-			for (const auto & [k, slice] : slices_)
+			for (const auto & [k, slice] : ranges::views::enumerate(slices_))
 			{
 				for (const auto [i, j] :
-				     ranges::views::cartesian_product(ranges::views::closed_indices(0, sizes_[0]),
-				                                      ranges::views::closed_indices(0, sizes_[1])))
+				     ranges::views::cartesian_product(ranges::views::indices(std::get<0>(sizes_)),
+				                                      ranges::views::indices(std::get<1>(sizes_))))
 				{
-					const auto & cell = slice.at({i, j});
-					const auto idx = indices2global({i, j, k});
-					num_points[idx] = cell.size();
+					const auto & cell = slice.at({ i, j });
+					const auto   idx  = indices2global(std::make_tuple(i, j, k));
+					num_points[idx]   = cell.has_value() ? cell->get().size() : 0;
 				}
 			}
 

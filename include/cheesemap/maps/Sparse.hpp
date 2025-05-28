@@ -286,7 +286,7 @@ namespace chs
 
 		[[nodiscard]] inline auto points_per_cell() const
 		{
-			std::vector<std::size_t> num_points(cells_.size());
+			std::vector<std::size_t> num_points(chs::product<Dim>(sizes_));
 			for (const auto & [idx, cell] : cells_)
 			{
 				num_points[idx] = cell.size();

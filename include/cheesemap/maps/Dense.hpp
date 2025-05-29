@@ -293,5 +293,15 @@ namespace chs
 
 			return bytes;
 		}
+
+		[[nodiscard]] inline auto get_num_cells() const
+		{
+			return cells_.size();
+		}
+
+		[[nodiscard]] inline auto get_num_empty_cells() const
+		{
+			return ranges::count_if(cells_, [](const auto & cell) { return cell.empty(); });
+		}
 	};
 } // namespace chs

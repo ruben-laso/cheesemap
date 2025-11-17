@@ -18,7 +18,7 @@
 
 namespace chs
 {
-	template<typename Point_type>
+	template<typename Point_type, template<typename, typename...> class HashMap = std::unordered_map>
 	class Mixed3D
 	{
 		protected:
@@ -39,7 +39,7 @@ namespace chs
 		// Number of cells of the map on each dimension
 		indices_type sizes_;
 
-		std::vector<chs::slice::Smart<Point_type>> slices_;
+		std::vector<chs::slice::Smart<Point_type, HashMap>> slices_;
 
 		template<std::size_t... Is>
 		[[nodiscard]] inline auto idx2box(const auto & idx, std::index_sequence<Is...>) const
@@ -252,7 +252,10 @@ namespace chs
 					search_radius = std::min(density_based_radius,
 					                         search_radius + default_radius_increment);
 				}
-				else { search_radius += default_radius_increment; }
+				else
+				{
+					search_radius += default_radius_increment;
+				}
 
 				const auto min = coord2indices(p - search_radius);
 				const auto max = coord2indices(p + search_radius);
@@ -302,7 +305,7 @@ namespace chs
 				                                      ranges::views::indices(std::get<1>(sizes_))))
 				{
 					const auto & cell = slice.at({ i, j });
-					const auto  idx = indices2global(std::make_tuple(i, j, k));
+					const auto   idx  = indices2global(std::make_tuple(i, j, k));
 					cells_stored[idx] = cell.has_value();
 				}
 			}
@@ -326,13 +329,6 @@ namespace chs
 			}
 
 			return num_points;
-		}
-
-		[[nodiscard]] inline auto mem_footprint() const
-		{
-			return ranges::accumulate(slices_, sizeof(*this), [](auto acc, const auto & slice) {
-				return acc + slice.mem_footprint();
-			});
 		}
 	};
 } // namespace chs

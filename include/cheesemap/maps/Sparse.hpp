@@ -20,7 +20,8 @@
 
 namespace chs
 {
-	template<typename Point_type, std::size_t Dim = 3>
+	template<typename Point_type, std::size_t Dim = 3,
+	         template<typename, typename...> class HashMap = std::unordered_map>
 	class Sparse
 	{
 		protected:
@@ -41,7 +42,7 @@ namespace chs
 		indices_type sizes_;
 
 		// Cells of the map
-		std::unordered_map<std::size_t, cell_type> cells_;
+		HashMap<std::size_t, cell_type> cells_;
 
 		template<std::size_t... Is>
 		[[nodiscard]] inline auto indices2global(const auto & indices, std::index_sequence<Is...>) const
@@ -245,7 +246,10 @@ namespace chs
 					search_radius = std::min(density_based_radius,
 					                         search_radius + default_radius_increment);
 				}
-				else { search_radius += default_radius_increment; }
+				else
+				{
+					search_radius += default_radius_increment;
+				}
 
 				const auto min = coord2indices(p - search_radius);
 				const auto max = coord2indices(p + search_radius);
@@ -304,29 +308,7 @@ namespace chs
 			return num_points;
 		}
 
-		[[nodiscard]] inline auto mem_footprint() const
-		{
-			std::size_t bytes = sizeof(*this);
-
-			// From https://stackoverflow.com/a/25438497
-			bytes +=
-			        // data list: #elements * (bucket size + pointers to next)
-			        (cells_.size() * (sizeof(typename decltype(cells_)::value_type) + sizeof(void *)) +
-			         // bucket index: #buckets * (pointer to bucket + size)
-			         cells_.bucket_count() * (sizeof(void *) + sizeof(size_t)));
-
-			for (const auto & [idx, cell] : cells_)
-			{
-				bytes += cell.capacity() * sizeof(Point_type *);
-			}
-
-			return bytes;
-		}
-
-		[[nodiscard]] inline auto get_num_cells() const
-		{
-			return cells_.size();
-		}
+		[[nodiscard]] inline auto get_num_cells() const { return cells_.size(); }
 
 		[[nodiscard]] inline auto get_num_empty_cells() const
 		{

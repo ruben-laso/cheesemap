@@ -18,7 +18,7 @@
 
 namespace chs
 {
-	template<typename Point_type>
+	template<typename Point_type, template<typename, typename...> class HashMap = std::unordered_map>
 	class Mixed2D
 	{
 		protected:
@@ -30,7 +30,7 @@ namespace chs
 
 		static constexpr dimensions_type DEFAULT_RESOLUTIONS = chs::n_tuple<Dim>(resolution_type{ 1 });
 
-		chs::slice::Smart<Point_type> slice_;
+		chs::slice::Smart<Point_type, HashMap> slice_;
 
 		public:
 		Mixed2D() = default;
@@ -158,7 +158,10 @@ namespace chs
 					search_radius = std::min(density_based_radius,
 					                         search_radius + default_radius_increment);
 				}
-				else { search_radius += default_radius_increment; }
+				else
+				{
+					search_radius += default_radius_increment;
+				}
 
 				const auto min = slice_.coord2indices(p - search_radius);
 				const auto max = slice_.coord2indices(p + search_radius);
@@ -225,7 +228,5 @@ namespace chs
 
 			return num_points;
 		}
-
-		[[nodiscard]] inline auto mem_footprint() const { return sizeof(*this) + slice_.mem_footprint(); }
 	};
 } // namespace chs

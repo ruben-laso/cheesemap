@@ -281,19 +281,6 @@ namespace chs
 			return num_points;
 		}
 
-		[[nodiscard]] inline auto mem_footprint() const
-		{
-			std::size_t bytes = sizeof(*this);
-
-			for (const auto & cell : cells_)
-			{
-				bytes += sizeof(cell);
-				bytes += cell.capacity() * sizeof(Point_type *);
-			}
-
-			return bytes;
-		}
-
 		[[nodiscard]] inline auto get_num_cells() const
 		{
 			return cells_.size();

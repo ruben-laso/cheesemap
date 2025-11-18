@@ -74,6 +74,11 @@ auto main(const int argc, const char * const argv[]) -> int
 	return EXIT_SUCCESS;
 }
 
+auto percent(const auto & part, const auto & total) -> double
+{
+	return (static_cast<double>(part) / static_cast<double>(total)) * 100.0;
+}
+
 template<typename BuildMapFunction, typename Points>
 void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points)
 {
@@ -89,12 +94,12 @@ void benchmark_map(const std::string & map_name, const BuildMapFunction && build
 	const auto non_empty_cells = ranges::count_if(points_per_cell, [](const auto & count) { return count > 0; });
 	std::cout << "Number of cells: " << points_per_cell.size() << '\n';
 	std::cout << "Number of non-empty cells: " << non_empty_cells << " ("
-	          << (non_empty_cells * 100.0 / points_per_cell.size()) << "%)\n";
+	          << percent(non_empty_cells, points_per_cell.size()) << "%)\n";
 
 	// Count stored cells
 	const auto stored_cells    = map.cells_stored();
 	const auto no_stored_cells = ranges::count_if(stored_cells, [](const auto & exists) { return exists; });
-	std::cout << "Stored cells: " << no_stored_cells << " (" << (no_stored_cells * 100.0 / points_per_cell.size())
+	std::cout << "Stored cells: " << no_stored_cells << " (" << percent(no_stored_cells, points_per_cell.size())
 	          << "%)\n";
 
 	// Compute average points per cell

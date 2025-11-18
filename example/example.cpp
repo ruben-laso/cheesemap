@@ -71,6 +71,13 @@ auto main(const int argc, const char * const argv[]) -> int
 	benchmark_map("chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<chs::Point, 2>(pts, 5.0, flags); }, points);
 	benchmark_map("chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<chs::Point, 3>(pts, 5.0, flags); }, points);
 
+	benchmark_map(
+	        "chs::Mixed<2, absl::flat_hash_map>",
+	        [&](auto & pts) { return chs::Mixed<chs::Point, 2, absl::flat_hash_map>(pts, 5.0, flags); }, points);
+	benchmark_map(
+	        "chs::Mixed<3, absl::flat_hash_map>",
+	        [&](auto & pts) { return chs::Mixed<chs::Point, 3, absl::flat_hash_map>(pts, 5.0, flags); }, points);
+
 	return EXIT_SUCCESS;
 }
 

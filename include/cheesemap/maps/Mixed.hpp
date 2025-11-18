@@ -14,6 +14,8 @@ namespace chs
 		static constexpr bool value = true;
 	};
 
-	template<typename Point_type, std::size_t Dim = 3, typename = std::enable_if<MixedValidDim<Dim>::value>>
-	using Mixed = std::conditional_t<Dim == 2, Mixed2D<Point_type>, Mixed3D<Point_type>>;
+	template<typename Point_type, std::size_t Dim = 3,
+	         template<typename, typename...> class HashMap = std::unordered_map,
+	         typename                                      = std::enable_if<MixedValidDim<Dim>::value>>
+	using Mixed = std::conditional_t<Dim == 2, Mixed2D<Point_type, HashMap>, Mixed3D<Point_type, HashMap>>;
 } // namespace chs

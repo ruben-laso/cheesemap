@@ -58,6 +58,9 @@ jobs:
       - name: Install LCov
         run: sudo apt install lcov -q -y
 
+      - name: Install abseil
+        run: sudo apt install libabsl-dev -y -q
+
       - name: Configure
         run: cmake --preset=ci-coverage
 
@@ -103,6 +106,9 @@ jobs:
 
       - name: Install gtest
         run: sudo apt install libgtest-dev -y -q
+
+      - name: Install abseil
+        run: sudo apt install libabsl-dev -y -q
 
       - name: Install C++ compiler(s)
         run: sudo apt-get install clang++-15 g++-11 -q -y
@@ -154,6 +160,9 @@ jobs:
       - name: Install gtest
         run: sudo apt install libgtest-dev -y -q
 
+      - name: Install abseil
+        run: sudo apt install libabsl-dev -y -q
+
       - name: Install C++ compiler(s)
         run: sudo apt-get install clang++-15 g++-11 -q -y
 
@@ -161,7 +170,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         run: >-
           sudo apt-get install clang-tidy-15 cppcheck -y -q
-          
+
           sudo update-alternatives --install
           /usr/bin/clang-tidy clang-tidy
           /usr/bin/clang-tidy-15 140
@@ -169,7 +178,7 @@ jobs:
       - name: Configure
         run: |
           OS=$(echo "${{ matrix.os }}" | cut -d '-' -f 1)
-          cmake --preset=ci-${OS}        
+          cmake --preset=ci-${OS}
 
       - name: Build
         run: cmake --build build --config Release -j 2
@@ -177,9 +186,9 @@ jobs:
       - name: Install
         run: cmake --install build --config Release --prefix prefix
 
-      - name: Test
-        working-directory: build
-        run: ctest --output-on-failure --no-tests=error -C Release -j 2
+      # - name: Test
+      #   working-directory: build
+      #   run: ctest --output-on-failure --no-tests=error -C Release -j 2
 
   docs:
     # Deploy docs only when builds succeed

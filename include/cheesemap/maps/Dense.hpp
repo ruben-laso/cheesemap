@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -33,6 +34,8 @@ namespace chs
 
 		static constexpr dimensions_type DEFAULT_RESOLUTIONS = chs::n_tuple<Dim>(resolution_type{ 1 });
 
+		static constexpr double OVERALLOCATION_FACTOR = 1.2;
+
 		// Dimension of each cell
 		dimensions_type resolutions_ = DEFAULT_RESOLUTIONS;
 
@@ -44,6 +47,12 @@ namespace chs
 
 		// Cells of the map
 		std::vector<cell_type> cells_;
+
+		// Cell (hyper-volume)
+		double cell_volume_ = 1.0;
+
+		// Density (pts/non-empty cell)
+		double density_ = 1.0;
 
 		template<std::size_t... Is>
 		[[nodiscard]] inline auto indices2global(const auto & indices, std::index_sequence<Is...>) const
@@ -115,6 +124,10 @@ namespace chs
 		Dense(Points_rng & points, dimensions_type res, chs::flags::build::flags_t flags = {}) :
 		        resolutions_(res), box_(Box::mbb(points))
 		{
+			cell_volume_ = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+				return (std::get<Is>(resolutions_) * ...);
+			}();
+
 			// Number of cells in each dimension
 			[&]<std::size_t... Is>(std::index_sequence<Is...>) {
 				((std::get<Is>(sizes_) =
@@ -155,22 +168,38 @@ namespace chs
 			{
 				ranges::for_each(cells_, [](auto & cell) { cell.shrink_to_fit(); });
 			}
+
+			// Compute density
+			const auto non_empty_cells =
+			        ranges::count_if(cells_, [](const auto & cell) { return not cell.empty(); });
+			density_ = static_cast<double>(points.size()) / static_cast<double>(non_empty_cells);
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t>
-		[[nodiscard]] inline auto query(const Kernel_t & kernel) const
+		[[nodiscard]] inline auto query(const Kernel_t & kernel, const bool estimate_prealloc = false) const
 		{
 			const auto dummy = []([[maybe_unused]] const auto &) { return true; };
-			return query(kernel, dummy);
+			return query(kernel, dummy, estimate_prealloc);
 		}
 
 		template<chs::concepts::Kernel<chs::Point> Kernel_t, chs::concepts::Filter<Point_type> Filter_t>
-		[[nodiscard]] inline auto query(const Kernel_t & kernel, Filter_t && filter) const
+		[[nodiscard]] inline auto query(const Kernel_t & kernel, Filter_t && filter,
+		                                const bool estimate_prealloc = false) const
 		{
 			std::vector<Point *> points;
 
-			const auto min = coord2indices(kernel.box().min());
-			const auto max = coord2indices(kernel.box().max());
+			const auto query_min = kernel.box().min();
+			const auto query_max = kernel.box().max();
+
+			const auto min = coord2indices(query_min);
+			const auto max = coord2indices(query_max);
+
+			// Estimate the required size of the output vector
+			const auto query_bbox_vol = chs::volume_bbox<Dim>(query_max, query_min);
+			const auto cells_bbox_vol = chs::cartesian_product_size<Dim>(max, min) * cell_volume_;
+			const auto est_points = static_cast<std::size_t>((query_bbox_vol / cells_bbox_vol) * density_ *
+			                                                 OVERALLOCATION_FACTOR);
+			points.reserve(est_points);
 
 			for (const auto indices : chs::cartesian<Dim>(min, max))
 			{
@@ -269,10 +298,7 @@ namespace chs
 			return candidates;
 		}
 
-		[[nodiscard]] inline auto cells_stored() const
-		{
-			return std::vector<bool>(cells_.size(), true);
-		}
+		[[nodiscard]] inline auto cells_stored() const { return std::vector<bool>(cells_.size(), true); }
 
 		[[nodiscard]] inline auto points_per_cell() const
 		{
@@ -281,10 +307,7 @@ namespace chs
 			return num_points;
 		}
 
-		[[nodiscard]] inline auto get_num_cells() const
-		{
-			return cells_.size();
-		}
+		[[nodiscard]] inline auto get_num_cells() const { return cells_.size(); }
 
 		[[nodiscard]] inline auto get_num_empty_cells() const
 		{

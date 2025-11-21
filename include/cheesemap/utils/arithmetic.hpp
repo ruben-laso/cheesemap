@@ -100,6 +100,45 @@ namespace chs
 		return product(a, std::make_index_sequence<Dim>{});
 	}
 
+	template<std::size_t... Is>
+	[[nodiscard]] inline auto cartesian_product_size(const auto & max, const auto & min, std::index_sequence<Is...>)
+	{
+		return (static_cast<std::size_t>(std::get<Is>(max) - std::get<Is>(min) + 1) * ...);
+	}
+
+	template<std::size_t Dim>
+	[[nodiscard]] inline auto cartesian_product_size(const auto & max, const auto & min)
+	{
+		return cartesian_product_size(max, min, std::make_index_sequence<Dim>{});
+	}
+
+	template<std::size_t... Is>
+	[[nodiscard]] inline auto volume_bbox(const auto & min, const auto & max, std::index_sequence<Is...>) -> double
+	{
+		return ((std::get<Is>(max) - std::get<Is>(min)) * ...);
+	}
+
+	template<std::size_t Dim = 3>
+	[[nodiscard]] inline auto volume_bbox(const auto & min, const auto & max) -> double
+	{
+		return volume_bbox(min, max, std::make_index_sequence<Dim>{});
+	}
+
+	template<std::size_t... Is>
+	[[nodiscard]] inline auto volume(const auto & max, const auto & min, const auto sizes,
+	                                 std::index_sequence<Is...>)
+	{
+		return ( //
+		        ((static_cast<double>(std::get<Is>(max)) - static_cast<double>(std::get<Is>(min)) + 1) *
+		         static_cast<double>(std::get<Is>(sizes))) //
+		        * ...);
+	}
+
+	template<std::size_t Dim>
+	[[nodiscard]] inline auto volume(const auto & max, const auto & min, const auto sizes)
+	{
+		return volume(max, min, sizes, std::make_index_sequence<Dim>{});
+	}
 
 	[[nodiscard]] inline auto radius_for_density(const auto & curr_pts, const auto & curr_r, const auto & trgt_pts)
 	{

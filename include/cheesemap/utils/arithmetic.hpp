@@ -112,10 +112,12 @@ namespace chs
 		return cartesian_product_size(max, min, std::make_index_sequence<Dim>{});
 	}
 
+	// use std::get if available
 	template<std::size_t... Is>
 	[[nodiscard]] inline auto volume_bbox(const auto & min, const auto & max, std::index_sequence<Is...>) -> double
 	{
-		return ((std::get<Is>(max) - std::get<Is>(min)) * ...);
+		// return ((std::get<Is>(max) - std::get<Is>(min)) * ...);
+		return ((max[Is] - min[Is]) * ...);
 	}
 
 	template<std::size_t Dim = 3>

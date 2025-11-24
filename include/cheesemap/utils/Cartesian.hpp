@@ -9,17 +9,29 @@
 
 namespace chs
 {
-	template<typename Range, std::size_t... Is>
-	constexpr auto cartesian_product_helper(Range && mins, Range && maxs, std::index_sequence<Is...>)
+	template<typename RangeA, typename RangeB, std::size_t... Is>
+	constexpr auto cartesian_product_helper(RangeA && mins, RangeB && maxs, std::index_sequence<Is...>)
 	{
 		return ranges::views::cartesian_product(
 		        ranges::views::closed_indices(std::get<Is>(mins), std::get<Is>(maxs))...);
 	}
 
-	template<std::size_t N, typename Range>
-	constexpr auto cartesian(Range && mins, Range && maxs)
+	template<std::size_t N, typename RangeA, typename RangeB>
+	constexpr auto cartesian(RangeA && mins, RangeB && maxs)
 	{
 		return cartesian_product_helper(mins, maxs, std::make_index_sequence<N>{});
+	}
+	template<typename RangeA, typename RangeB, std::size_t... Is>
+	constexpr auto cartesian_product_helper_open_bound(RangeA && mins, RangeB && maxs, std::index_sequence<Is...>)
+	{
+		return ranges::views::cartesian_product(
+		        ranges::views::indices(std::get<Is>(mins), std::get<Is>(maxs))...);
+	}
+
+	template<std::size_t N, typename RangeA, typename RangeB>
+	constexpr auto cartesian_open_bound(RangeA && mins, RangeB && maxs)
+	{
+		return cartesian_product_helper_open_bound(mins, maxs, std::make_index_sequence<N>{});
 	}
 
 	inline auto tuple_to_array(const auto & tuple)

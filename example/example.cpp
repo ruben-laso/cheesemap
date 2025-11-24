@@ -11,7 +11,7 @@
 template<typename BuildMapFunction, typename Points>
 void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points);
 
-template<typename Map, typename Points, bool prealloc = false>
+template<typename Map, typename Points>
 void benchmark_query(const Map & map, const Points & points);
 
 template<typename Map, typename Points>
@@ -46,6 +46,11 @@ auto main(const int argc, const char * const argv[]) -> int
 
 	benchmark_map("chs::Dense<2>", [&](auto & pts) { return chs::Dense<chs::Point, 2>(pts, 1.0, flags); }, points);
 	benchmark_map("chs::Dense<3>", [&](auto & pts) { return chs::Dense<chs::Point, 3>(pts, 1.0, flags); }, points);
+
+	benchmark_map(
+	        "chs::OldDense<2>", [&](auto & pts) { return chs::OldDense<chs::Point, 2>(pts, 1.0, flags); }, points);
+	benchmark_map(
+	        "chs::OldDense<3>", [&](auto & pts) { return chs::OldDense<chs::Point, 3>(pts, 1.0, flags); }, points);
 
 	// benchmark_map(
 	//         "chs::Sparse<2, std::unordered_map>",
@@ -118,14 +123,11 @@ void benchmark_map(const std::string & map_name, const BuildMapFunction && build
 	        ranges::accumulate(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(non_empty_cells);
 	std::cout << "Average points per non-empty cell: " << av_points_per_non_empty_cell << '\n';
 
-	for (const auto i : ranges::views::iota(0, 10))
+	for (const auto i : ranges::views::iota(0, 1))
 	{
 		std::cout << "Run #" << i + 1 << ":\n";
-		std::cout << "Benchmarking queries (no preallocation)...\n";
-		benchmark_query<decltype(map), Points, false>(map, points);
-		// benchmark_knn(map, points);
-		std::cout << "Benchmarking queries (with preallocation)...\n";
-		benchmark_query<decltype(map), Points, true>(map, points);
+		std::cout << "Benchmarking queries...\n";
+		benchmark_query<decltype(map), Points>(map, points);
 		// benchmark_knn(map, points);
 		std::cout << "----------------------------------------\n";
 	}
@@ -134,22 +136,22 @@ void benchmark_map(const std::string & map_name, const BuildMapFunction && build
 }
 
 
-template<typename Map, typename Points, bool prealloc>
+template<typename Map, typename Points>
 void benchmark_query(const Map & map, const Points & points)
 {
 	std::size_t max_neighs = std::numeric_limits<std::size_t>::min();
 	std::size_t min_neighs = std::numeric_limits<std::size_t>::max();
 	double      ave_neighs = 0.0;
 
-	static constexpr std::size_t NUM_SEARCHES = 100; // '000'000;
+	static constexpr std::size_t NUM_SEARCHES = 1'000'000;
 
 	std::size_t ns_map = 0;
-	for (const auto & p : points | ranges::views::take(NUM_SEARCHES))
+	for (const auto & p : points | ranges::views::sample(NUM_SEARCHES))
 	{
 		chs::kernels::Sphere<3> search(p, 2.5);
 
 		const auto start       = std::chrono::high_resolution_clock::now();
-		const auto results_map = map.query(search, prealloc);
+		const auto results_map = map.query(search);
 		const auto end         = std::chrono::high_resolution_clock::now();
 
 		ns_map += static_cast<std::size_t>(

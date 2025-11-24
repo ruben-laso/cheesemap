@@ -20,27 +20,28 @@ namespace chs
 		// Cells of the map
 		std::vector<cell_type> cells_;
 
-		[[nodiscard]] inline auto cell_exists_impl([[maybe_unused]] const indices_type & indices) const -> bool
+		[[nodiscard]] CHSINLINE auto cell_exists_impl([[maybe_unused]] const indices_type & indices) const
+		        -> bool
 		{
 			return true;
 		}
 
-		[[nodiscard]] inline auto at_impl(const indices_type & indices) -> cell_type &
+		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type &
 		{
 			return cells_[this->indices2global(indices)];
 		}
 
-		[[nodiscard]] inline auto at_impl(const indices_type & indices) const -> const cell_type &
+		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
 		{
 			return cells_[this->indices2global(indices)];
 		}
 
-		void add_point_impl(const indices_type & idx, Point * point_ptr)
+		CHSINLINE void add_point_impl(const indices_type & idx, Point * point_ptr)
 		{
 			cells_[this->indices2global(idx)].emplace_back(point_ptr);
 		}
 
-		inline void allocate_cells_impl()
+		void allocate_cells_impl()
 		{
 			const auto num_cells = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
 				std::size_t acc = 1;
@@ -73,18 +74,18 @@ namespace chs
 			this->init(points, res, flags);
 		}
 
-		[[nodiscard]] inline auto cells_stored() const { return std::vector<bool>(cells_.size(), true); }
+		[[nodiscard]] CHSINLINE auto cells_stored() const { return std::vector<bool>(cells_.size(), true); }
 
-		[[nodiscard]] inline auto points_per_cell() const
+		[[nodiscard]] CHSINLINE auto points_per_cell() const
 		{
 			std::vector<std::size_t> num_points(cells_.size());
 			ranges::transform(cells_, num_points.begin(), [](const auto & cell) { return cell.size(); });
 			return num_points;
 		}
 
-		[[nodiscard]] inline auto get_num_cells() const { return cells_.size(); }
+		[[nodiscard]] CHSINLINE auto get_num_cells() const { return cells_.size(); }
 
-		[[nodiscard]] inline auto get_num_empty_cells() const
+		[[nodiscard]] CHSINLINE auto get_num_empty_cells() const
 		{
 			return ranges::count_if(cells_, [](const auto & cell) { return cell.empty(); });
 		}

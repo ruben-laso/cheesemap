@@ -7,6 +7,8 @@
 #include <range/v3/view/indices.hpp>
 #include <range/v3/view/transform.hpp>
 
+#include "cheesemap/utils/inline.hpp"
+
 namespace chs
 {
 	template<typename RangeA, typename RangeB, std::size_t... Is>
@@ -34,7 +36,20 @@ namespace chs
 		return cartesian_product_helper_open_bound(mins, maxs, std::make_index_sequence<N>{});
 	}
 
-	inline auto tuple_to_array(const auto & tuple)
+	template<std::size_t... Is>
+	[[nodiscard]] CHSINLINE auto cartesian_product_size(const auto & min, const auto & max,
+	                                                    std::index_sequence<Is...>)
+	{
+		return (static_cast<std::size_t>(std::get<Is>(max) - std::get<Is>(min) + 1) * ...);
+	}
+
+	template<std::size_t Dim>
+	[[nodiscard]] CHSINLINE auto cartesian_product_size(const auto & min, const auto & max)
+	{
+		return cartesian_product_size(min, max, std::make_index_sequence<Dim>{});
+	}
+
+	CHSINLINE auto tuple_to_array(const auto & tuple)
 	{
 		return std::apply([](auto... args) { return std::array{ args... }; }, tuple);
 	}

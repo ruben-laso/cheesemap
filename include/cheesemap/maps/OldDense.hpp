@@ -196,7 +196,7 @@ namespace chs
 			// Estimate the required size of the output vector
 			const auto query_bbox_vol = chs::volume_bbox<Dim>(query_max, query_min);
 			const auto cells_bbox_vol =
-			        static_cast<double>(chs::cartesian_product_size<Dim>(max, min)) * cell_volume_;
+			        static_cast<double>(chs::cartesian_product_size<Dim>(min, max)) * cell_volume_;
 			const auto est_points = static_cast<std::size_t>((query_bbox_vol / cells_bbox_vol) * density_ *
 			                                                 OVERALLOCATION_FACTOR);
 			points.reserve(est_points);

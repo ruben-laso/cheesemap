@@ -1,54 +1,57 @@
 #pragma once
 
-#include "cheesemap/maps/IMap.hpp"
+#include "cheesemap/maps/CMap.hpp"
 
 namespace chs
 {
 	template<typename Point_type, std::size_t Dim = 3>
-	class Dense : public IMap<Point_type, Dim>
+	class Dense : public CMap<Point_type, Dim, Dense<Point_type, Dim>>
 	{
-		using resolution_type = double;
-		using dimensions_type = chs::type_traits::tuple<resolution_type, Dim>;
-		using gbl_idx_type    = std::size_t;
-		using indices_type    = chs::type_traits::tuple<gbl_idx_type, Dim>;
-		using cell_type       = Cell<Point_type>;
+		using Super = CMap<Point_type, Dim, Dense>;
+		// grant CMap access
+		friend class CMap<Point_type, Dim, Dense>;
+
+		using resolution_type = typename Super::resolution_type;
+		using dimensions_type = typename Super::dimensions_type;
+		using gbl_idx_type    = typename Super::gbl_idx_type;
+		using indices_type    = typename Super::indices_type;
+		using cell_type       = typename Super::cell_type;
 
 		// Cells of the map
 		std::vector<cell_type> cells_;
 
-		[[nodiscard]] inline auto cell_exists([[maybe_unused]] const indices_type & indices) const
-		        -> bool override
+		[[nodiscard]] inline auto cell_exists_impl([[maybe_unused]] const indices_type & indices) const -> bool
 		{
 			return true;
 		}
 
-		[[nodiscard]] inline auto at(const indices_type & indices) -> cell_type & override
+		[[nodiscard]] inline auto at_impl(const indices_type & indices) -> cell_type &
 		{
 			return cells_[this->indices2global(indices)];
 		}
 
-		[[nodiscard]] inline auto at(const indices_type & indices) const -> const cell_type & override
+		[[nodiscard]] inline auto at_impl(const indices_type & indices) const -> const cell_type &
 		{
 			return cells_[this->indices2global(indices)];
 		}
 
-		void add_point(const indices_type & idx, Point * point_ptr) override
+		void add_point_impl(const indices_type & idx, Point * point_ptr)
 		{
 			cells_[this->indices2global(idx)].emplace_back(point_ptr);
 		}
 
-		inline void allocate_cells() override
+		inline void allocate_cells_impl()
 		{
 			const auto num_cells = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
 				std::size_t acc = 1;
-				((acc *= std::get<Is>(Dense::sizes_)), ...);
+				((acc *= std::get<Is>(Super::sizes_)), ...);
 				return acc;
 			}(std::make_index_sequence<Dim>{});
 
 			cells_.resize(num_cells);
 		}
 
-		void shrink_to_fit() override
+		void shrink_to_fit_impl()
 		{
 			for (auto & cell : cells_)
 			{
@@ -65,7 +68,7 @@ namespace chs
 		{}
 
 		Dense(std::vector<Point_type> & points, dimensions_type res, chs::flags::build::flags_t flags = {}) :
-		        IMap<Point_type, Dim>(points, res, flags)
+		        Super(points, res, flags)
 		{
 			this->init(points, res, flags);
 		}

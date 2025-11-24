@@ -44,13 +44,13 @@ auto main(const int argc, const char * const argv[]) -> int
 	        chs::flags::build::SHRINK_TO_FIT | //
 	        0;
 
-	benchmark_map("chs::Dense<2>", [&](auto & pts) { return chs::Dense<chs::Point, 2>(pts, 1.0, flags); }, points);
-	benchmark_map("chs::Dense<3>", [&](auto & pts) { return chs::Dense<chs::Point, 3>(pts, 1.0, flags); }, points);
-
 	benchmark_map(
 	        "chs::OldDense<2>", [&](auto & pts) { return chs::OldDense<chs::Point, 2>(pts, 1.0, flags); }, points);
 	benchmark_map(
 	        "chs::OldDense<3>", [&](auto & pts) { return chs::OldDense<chs::Point, 3>(pts, 1.0, flags); }, points);
+
+	benchmark_map("chs::Dense<2>", [&](auto & pts) { return chs::Dense<chs::Point, 2>(pts, 1.0, flags); }, points);
+	benchmark_map("chs::Dense<3>", [&](auto & pts) { return chs::Dense<chs::Point, 3>(pts, 1.0, flags); }, points);
 
 	// benchmark_map(
 	//         "chs::Sparse<2, std::unordered_map>",

@@ -1,6 +1,6 @@
 #pragma once
 
 #include "Dense.hpp"
-#include "OldDense.hpp"
 #include "Mixed.hpp"
+#include "OldDense.hpp"
 #include "Sparse.hpp"

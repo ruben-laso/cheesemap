@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 #include <array>
 #include <tuple>
 #include <utility>
@@ -12,7 +10,6 @@
 #include "cheesemap/utils/execution.hpp"
 
 #include "cheesemap/concepts/concepts.hpp"
-#include "cheesemap/kernels/kernels.hpp"
 
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
@@ -23,10 +20,12 @@
 #include "cheesemap/utils/flags.hpp"
 #include "cheesemap/utils/type_traits.hpp"
 
+#include "cheesemap/utils/inline.hpp"
+
 namespace chs
 {
-	template<typename Point_type, std::size_t Dim = 3>
-	class IMap
+	template<typename Point_type, std::size_t Dim, typename Derived_type>
+	class CMap
 	{
 		protected:
 		using resolution_type = double;
@@ -55,7 +54,7 @@ namespace chs
 		double density_ = 1.0;
 
 		template<gbl_idx_type... Is>
-		[[nodiscard]] inline auto indices2global(const auto & indices, std::index_sequence<Is...>) const
+		[[nodiscard]] CHSINLINE auto indices2global(const auto & indices, std::index_sequence<Is...>) const
 		{
 			gbl_idx_type idx = 0;
 
@@ -64,13 +63,13 @@ namespace chs
 			return idx;
 		}
 
-		[[nodiscard]] inline auto indices2global(const auto & indices) const
+		[[nodiscard]] CHSINLINE auto indices2global(const auto & indices) const
 		{
 			return indices2global(indices, std::make_index_sequence<Dim>{});
 		}
 
 		template<gbl_idx_type... Is>
-		[[nodiscard]] inline auto idx2box(const auto & idx, std::index_sequence<Is...>) const
+		[[nodiscard]] CHSINLINE auto idx2box(const auto & idx, std::index_sequence<Is...>) const
 		{
 			Point min = box_.min();
 			Point max = box_.max();
@@ -83,13 +82,13 @@ namespace chs
 			return Box(std::make_pair(min, max));
 		}
 
-		[[nodiscard]] inline auto idx2box(const auto & idx) const
+		[[nodiscard]] CHSINLINE auto idx2box(const auto & idx) const
 		{
 			return idx2box(idx, std::make_index_sequence<Dim>{});
 		}
 
 		template<gbl_idx_type... Is>
-		[[nodiscard]] inline auto coord2indices(const Point & p, std::index_sequence<Is...>) const
+		[[nodiscard]] CHSINLINE auto coord2indices(const Point & p, std::index_sequence<Is...>) const
 		{
 			indices_type idx;
 
@@ -103,42 +102,52 @@ namespace chs
 			return idx;
 		}
 
-		[[nodiscard]] inline auto coord2indices(const Point & p) const
+		[[nodiscard]] CHSINLINE auto coord2indices(const Point & p) const
 		{
 			return coord2indices(p, std::make_index_sequence<Dim>{});
 		}
 
-		template<chs::concepts::Kernel<chs::Point> Kernel_t>
-		[[nodiscard]] inline auto estimate_pts_query(const Kernel_t & kernel, const indices_type & min,
-		                                             const indices_type & max) const
+		[[nodiscard]] CHSINLINE auto estimate_pts_query(const Point_type &   kernel_min,
+		                                                const Point_type &   kernel_max,
+		                                                const indices_type & idx_min,
+		                                                const indices_type & idx_max) const
 		{
-			const auto query_min = kernel.box().min();
-			const auto query_max = kernel.box().max();
-
 			// Estimate the required size of the output vector
-			const auto query_bbox_vol = chs::volume_bbox<Dim>(query_max, query_min);
+			const auto query_bbox_vol = chs::volume_bbox<Dim>(kernel_min, kernel_max);
 			const auto cells_bbox_vol =
-			        static_cast<double>(chs::cartesian_product_size<Dim>(max, min)) * cell_volume_;
-			const auto est_points = static_cast<gbl_idx_type>((query_bbox_vol / cells_bbox_vol) * density_ *
-			                                                  OVERALLOCATION_FACTOR);
+			        static_cast<double>(chs::cartesian_product_size<Dim>(idx_min, idx_max)) * cell_volume_;
+			const auto est_points = static_cast<std::size_t>((query_bbox_vol / cells_bbox_vol) * density_ *
+			                                                 OVERALLOCATION_FACTOR);
 
 			return est_points;
 		}
 
-		[[nodiscard]] virtual auto cell_exists(const indices_type & indices) const -> bool = 0;
+		[[nodiscard]] auto cell_exists(const indices_type & indices) const -> bool
+		{
+			return static_cast<const Derived_type *>(this)->cell_exists_impl(indices);
+		}
 
-		[[nodiscard]] virtual auto at(const indices_type & indices) -> cell_type & = 0;
+		[[nodiscard]] auto at(const indices_type & indices) -> cell_type &
+		{
+			return static_cast<Derived_type *>(this)->at_impl(indices);
+		}
 
-		[[nodiscard]] virtual auto at(const indices_type & indices) const -> const cell_type & = 0;
+		[[nodiscard]] auto at(const indices_type & indices) const -> const cell_type &
+		{
+			return static_cast<const Derived_type *>(this)->at_impl(indices);
+		}
 
-		virtual void add_point(const indices_type & idx, Point * point_ptr) = 0;
+		void add_point(const indices_type & idx, Point * point_ptr)
+		{
+			return static_cast<Derived_type *>(this)->add_point_impl(idx, point_ptr);
+		}
 
-		virtual void allocate_cells() = 0;
+		void allocate_cells() { return static_cast<Derived_type *>(this)->allocate_cells_impl(); }
 
-		virtual void shrink_to_fit() = 0;
+		void shrink_to_fit() { return static_cast<Derived_type *>(this)->shrink_to_fit_impl(); }
 
-		virtual void init(std::vector<Point_type> & points, [[maybe_unused]] dimensions_type res,
-		                  chs::flags::build::flags_t flags = {})
+		void init(std::vector<Point_type> & points, [[maybe_unused]] dimensions_type res,
+		          chs::flags::build::flags_t flags = {})
 		{
 			cell_volume_ = [&]<gbl_idx_type... Is>(std::index_sequence<Is...>) {
 				return (std::get<Is>(resolutions_) * ...);
@@ -188,16 +197,16 @@ namespace chs
 		}
 
 		public:
-		virtual ~IMap() = default;
+		virtual ~CMap() = default;
 
-		IMap() = delete;
+		CMap() = delete;
 
-		IMap(std::vector<Point_type> & points, const resolution_type res,
+		CMap(std::vector<Point_type> & points, const resolution_type res,
 		     chs::flags::build::flags_t flags = {}) :
-		        IMap(points, dimensions_type{ n_tuple<Dim>(res) }, flags)
+		        CMap(points, dimensions_type{ n_tuple<Dim>(res) }, flags)
 		{}
 
-		IMap(std::vector<Point_type> & points, dimensions_type res,
+		CMap(std::vector<Point_type> & points, dimensions_type res,
 		     [[maybe_unused]] chs::flags::build::flags_t flags = {}) :
 		        resolutions_(res), box_(Box::mbb(points))
 		{}
@@ -221,7 +230,8 @@ namespace chs
 			const auto max = coord2indices(query_max);
 
 			// Estimate the required size of the output vector
-			points.reserve(estimate_pts_query(kernel, min, max));
+			const auto est_points = estimate_pts_query(query_min, query_max, min, max);
+			points.reserve(est_points);
 
 			for (const auto & indices : chs::cartesian<Dim>(min, max))
 			{

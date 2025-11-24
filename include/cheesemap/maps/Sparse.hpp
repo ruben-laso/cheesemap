@@ -1,22 +1,8 @@
 #pragma once
 
-#include <array>
 #include <unordered_map>
-#include <vector>
 
-#include <range/v3/all.hpp>
-
-#include "cheesemap/utils/execution.hpp"
-
-#include "cheesemap/utils/Box.hpp"
-#include "cheesemap/utils/Cell.hpp"
-
-#include "cheesemap/concepts/concepts.hpp"
-
-#include "cheesemap/utils/Cartesian.hpp"
-#include "cheesemap/utils/flags.hpp"
-#include "cheesemap/utils/sorted_vector.hpp"
-#include "cheesemap/utils/type_traits.hpp"
+#include "cheesemap/maps/CMap.hpp"
 
 namespace chs
 {

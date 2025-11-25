@@ -80,15 +80,20 @@ auto main(const int argc, const char * const argv[]) -> int
 	        "chs::Sparse<3, absl::flat_hash_map>",
 	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, absl::flat_hash_map>(pts, 1.0, flags); }, points);
 
-	// benchmark_map("chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<chs::Point, 2>(pts, 5.0, flags); }, points);
-	// benchmark_map("chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<chs::Point, 3>(pts, 5.0, flags); }, points);
-	//
-	// benchmark_map(
-	//         "chs::Mixed<2, absl::flat_hash_map>",
-	//         [&](auto & pts) { return chs::Mixed<chs::Point, 2, absl::flat_hash_map>(pts, 5.0, flags); }, points);
-	// benchmark_map(
-	//         "chs::Mixed<3, absl::flat_hash_map>",
-	//         [&](auto & pts) { return chs::Mixed<chs::Point, 3, absl::flat_hash_map>(pts, 5.0, flags); }, points);
+	benchmark_map(
+	        "chs::OldMixed<2>", [&](auto & pts) { return chs::OldMixed<chs::Point, 2>(pts, 5.0, flags); }, points);
+	benchmark_map(
+	        "chs::OldMixed<3>", [&](auto & pts) { return chs::OldMixed<chs::Point, 3>(pts, 5.0, flags); }, points);
+
+	benchmark_map("chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<chs::Point, 2>(pts, 5.0, flags); }, points);
+	benchmark_map("chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<chs::Point, 3>(pts, 5.0, flags); }, points);
+
+	benchmark_map(
+	        "chs::Mixed<2, absl::flat_hash_map>",
+	        [&](auto & pts) { return chs::Mixed<chs::Point, 2, absl::flat_hash_map>(pts, 5.0, flags); }, points);
+	benchmark_map(
+	        "chs::Mixed<3, absl::flat_hash_map>",
+	        [&](auto & pts) { return chs::Mixed<chs::Point, 3, absl::flat_hash_map>(pts, 5.0, flags); }, points);
 
 	return EXIT_SUCCESS;
 }

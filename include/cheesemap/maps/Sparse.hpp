@@ -32,8 +32,7 @@ namespace chs
 			return cells_.find(this->indices2global(indices));
 		}
 
-		[[nodiscard]] CHSINLINE auto cell_exists_impl([[maybe_unused]] const indices_type & indices) const
-		        -> bool
+		[[nodiscard]] CHSINLINE auto cell_exists_impl(const indices_type & indices) const -> bool
 		{
 			return find(indices) != cells_.end();
 		}

@@ -80,10 +80,7 @@ namespace chs::slice
 				{
 					cells_dense_.emplace_back(std::move(cell_it->second));
 				}
-				else
-				{
-					cells_dense_.emplace_back(cell_type{});
-				}
+				else { cells_dense_.emplace_back(cell_type{}); }
 			}
 
 			use_sparse_   = false;
@@ -199,10 +196,7 @@ namespace chs::slice
 		inline void add_point(Point_type & point)
 		{
 			if (use_sparse_) { add_point_sparse(point); }
-			else
-			{
-				add_point_dense(point);
-			}
+			else { add_point_dense(point); }
 		}
 
 		inline void shrink_to_fit()
@@ -217,38 +211,34 @@ namespace chs::slice
 			}
 		}
 
-		[[nodiscard]] inline auto at(const indices_type & indices)
-		        -> std::optional<std::reference_wrapper<cell_type>>
+		[[nodiscard]] CHSINLINE auto find(const indices_type & indices) -> cell_type *
 		{
-			const auto idx = indices2global(indices);
+			const auto & gbl_idx = indices2global(indices);
 
 			if (use_sparse_)
 			{
-				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
-				{
-					return { cell_it->second };
-				}
-				return std::nullopt;
+				const auto it = cells_sparse_.find(gbl_idx);
+				return it == cells_sparse_.end() ? nullptr : &(it->second);
 			}
-
-			return { cells_dense_[idx] };
+			return &cells_dense_[gbl_idx];
 		}
 
-		[[nodiscard]] inline auto at(const indices_type & indices) const
-		        -> std::optional<std::reference_wrapper<const cell_type>>
+		[[nodiscard]] CHSINLINE auto find(const indices_type & indices) const -> const cell_type *
 		{
-			const auto idx = indices2global(indices);
-
+			const auto gbl_idx = indices2global(indices);
 			if (use_sparse_)
 			{
-				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
-				{
-					return { cell_it->second };
-				}
-				return std::nullopt;
+				const auto it = cells_sparse_.find(gbl_idx);
+				return it == cells_sparse_.end() ? nullptr : &(it->second);
 			}
+			return &cells_dense_[gbl_idx];
+		}
 
-			return { cells_dense_[idx] };
+		[[nodiscard]] CHSINLINE auto at(const indices_type & indices) -> cell_type * { return find(indices); }
+
+		[[nodiscard]] CHSINLINE auto at(const indices_type & indices) const -> const cell_type *
+		{
+			return find(indices);
 		}
 	};
 } // namespace chs::slice

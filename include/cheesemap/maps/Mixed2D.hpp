@@ -39,7 +39,7 @@ namespace chs
 			return *slice_.at(indices);
 		}
 
-		CHSINLINE void add_point_impl(const indices_type & idx, Point * point_ptr)
+		CHSINLINE void add_point_impl([[maybe_unused]] const indices_type & idx, Point * point_ptr)
 		{
 			slice_.add_point(*point_ptr);
 		}

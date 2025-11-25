@@ -256,8 +256,8 @@ namespace chs
 			// Taboo list (to avoid visiting the same cell twice)
 			const auto center_idx = coord2indices(p);
 
-			auto taboo_mins = center_idx;
-			auto taboo_maxs = center_idx;
+			auto taboo_mins = chs::n_tuple<Dim>(std::numeric_limits<std::size_t>::max());
+			auto taboo_maxs = chs::n_tuple<Dim>(std::numeric_limits<std::size_t>::max());
 
 			auto is_taboo = [&](const auto & indices) {
 				return chs::within_closed_bounds<Dim>(indices, taboo_mins, taboo_maxs);
@@ -267,7 +267,8 @@ namespace chs
 			const double default_radius_increment = chs::min<Dim>(resolutions_);
 
 			// Search radius starts within the cell containing p
-			double search_radius = idx2box(coord2indices(p)).distance_to_wall(p, /* inside = */ true);
+			auto search_radius = 0.0;
+			auto next_radius   = idx2box(coord2indices(p)).distance_to_wall(p, /* inside = */ true);
 
 			auto candidates_within_sq_radius = [&] {
 				const auto sq_radius = search_radius * search_radius;
@@ -283,6 +284,8 @@ namespace chs
 			        // we have not visited all the cells
 			        not chs::all_visited<Dim>(taboo_mins, taboo_maxs, sizes_))
 			{
+				search_radius = next_radius;
+
 				const auto min = coord2indices(p - search_radius);
 				const auto max = coord2indices(p + search_radius);
 
@@ -290,9 +293,9 @@ namespace chs
 				// If not, we search those cells
 				if (not(chs::all_equal<Dim>(min, taboo_mins) and chs::all_equal<Dim>(max, taboo_maxs)))
 				{
-					for (const auto & indices :
-					     chs::cartesian<Dim>(min, max) | ranges::views::filter(is_taboo))
+					for (const auto & indices : chs::cartesian<Dim>(min, max))
 					{
+						if (is_taboo(indices)) { continue; }
 						if (not cell_exists(indices)) { continue; }
 
 						const auto & cell = at(indices);
@@ -313,10 +316,10 @@ namespace chs
 				{
 					const auto density_based_radius = chs::radius_for_density(
 					        candidates_within_sq_radius(), search_radius, k);
-					search_radius = std::min(density_based_radius,
-					                         search_radius + default_radius_increment);
+					next_radius = std::min(density_based_radius,
+					                       search_radius + default_radius_increment);
 				}
-				else { search_radius += default_radius_increment; }
+				else { next_radius = search_radius + default_radius_increment; }
 			}
 
 			ranges::for_each(candidates,

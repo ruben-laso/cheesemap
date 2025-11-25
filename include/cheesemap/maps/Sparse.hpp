@@ -81,32 +81,5 @@ namespace chs
 		{
 			this->init(points, res, flags);
 		}
-
-		[[nodiscard]] CHSINLINE auto cells_stored() const
-		{
-			std::vector<bool> cells_stored(chs::product<Dim>(this->sizes_), false);
-			for (const auto & [idx, cell] : cells_)
-			{
-				cells_stored[idx] = true;
-			}
-			return cells_stored;
-		}
-
-		[[nodiscard]] CHSINLINE auto points_per_cell() const
-		{
-			std::vector<std::size_t> num_points(chs::product<Dim>(this->sizes_));
-			for (const auto & [idx, cell] : cells_)
-			{
-				num_points[idx] = cell.size();
-			}
-			return num_points;
-		}
-
-		[[nodiscard]] CHSINLINE auto get_num_cells() const { return cells_.size(); }
-
-		[[nodiscard]] CHSINLINE auto get_num_empty_cells() const
-		{
-			return ranges::count_if(cells_, [](const auto & cell) { return cell.second.empty(); });
-		}
 	};
 } // namespace chs

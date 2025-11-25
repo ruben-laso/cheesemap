@@ -77,21 +77,5 @@ namespace chs
 		{
 			this->init(points, res, flags);
 		}
-
-		[[nodiscard]] CHSINLINE auto cells_stored() const { return std::vector<bool>(cells_.size(), true); }
-
-		[[nodiscard]] CHSINLINE auto points_per_cell() const
-		{
-			std::vector<std::size_t> num_points(cells_.size());
-			ranges::transform(cells_, num_points.begin(), [](const auto & cell) { return cell.size(); });
-			return num_points;
-		}
-
-		[[nodiscard]] CHSINLINE auto get_num_cells() const { return cells_.size(); }
-
-		[[nodiscard]] CHSINLINE auto get_num_empty_cells() const
-		{
-			return ranges::count_if(cells_, [](const auto & cell) { return cell.empty(); });
-		}
 	};
 } // namespace chs

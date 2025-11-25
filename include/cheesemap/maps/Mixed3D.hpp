@@ -95,41 +95,5 @@ namespace chs
 		{
 			this->init(points, res, flags);
 		}
-
-		[[nodiscard]] inline auto cells_stored() const
-		{
-			std::vector<bool> cells_stored(chs::product<Dim>(this->sizes_), false);
-			for (const auto & [k, slice] : ranges::views::enumerate(slices_))
-			{
-				for (const auto [i, j] : ranges::views::cartesian_product(
-				             ranges::views::indices(std::get<0>(this->sizes_)),
-				             ranges::views::indices(std::get<1>(this->sizes_))))
-				{
-					const auto & cell_ptr = slice.at({ i, j });
-					const auto   idx      = this->indices2global(std::make_tuple(i, j, k));
-					cells_stored[idx]     = cell_ptr != nullptr;
-				}
-			}
-			return cells_stored;
-		}
-
-		[[nodiscard]] inline auto points_per_cell() const
-		{
-			std::vector<std::size_t> num_points(chs::product<Dim>(this->sizes_));
-
-			for (const auto & [k, slice] : ranges::views::enumerate(slices_))
-			{
-				for (const auto [i, j] : ranges::views::cartesian_product(
-				             ranges::views::indices(std::get<0>(this->sizes_)),
-				             ranges::views::indices(std::get<1>(this->sizes_))))
-				{
-					const auto * cell_ptr = slice.at({ i, j });
-					const auto   idx      = this->indices2global(std::make_tuple(i, j, k));
-					num_points[idx]       = cell_ptr ? cell_ptr->size() : 0;
-				}
-			}
-
-			return num_points;
-		}
 	};
 } // namespace chs

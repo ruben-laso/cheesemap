@@ -328,20 +328,69 @@ namespace chs
 			return candidates;
 		}
 
-		// [[nodiscard]] inline auto cells_stored() const { return std::vector<bool>(cells_.size(), true); }
-		//
-		// [[nodiscard]] inline auto points_per_cell() const
-		// {
-		// 	std::vector<std::size_t> num_points(cells_.size());
-		// 	ranges::transform(cells_, num_points.begin(), [](const auto & cell) { return cell.size(); });
-		// 	return num_points;
-		// }
-		//
-		// [[nodiscard]] inline auto get_num_cells() const { return cells_.size(); }
-		//
-		// [[nodiscard]] inline auto get_num_empty_cells() const
-		// {
-		// 	return ranges::count_if(cells_, [](const auto & cell) { return cell.empty(); });
-		// }
+		[[nodiscard]] inline auto cells_stored() const
+		{
+			const auto n_cells = chs::product<Dim>(sizes_);
+
+			std::vector<bool> cells(n_cells, false);
+
+			const auto & zeros = chs::n_tuple<Dim>(0UL);
+			for (const auto & indices : chs::cartesian_open_bound<Dim>(zeros, sizes_))
+			{
+				const auto gbl_idx = indices2global(indices);
+				cells[gbl_idx]     = cell_exists(indices);
+			}
+
+			return cells;
+		}
+
+		[[nodiscard]] inline auto points_per_cell() const
+		{
+			const auto               n_cells = chs::product<Dim>(sizes_);
+			std::vector<std::size_t> num_points(n_cells, 0);
+
+			const auto zeros = chs::n_tuple<Dim>(0UL);
+			for (const auto & indices : chs::cartesian_open_bound<Dim>(zeros, sizes_))
+			{
+				const auto gbl_idx = indices2global(indices);
+				if (not cell_exists(indices)) { continue; }
+				const auto & cell   = at(indices);
+				num_points[gbl_idx] = cell.size();
+			}
+
+			return num_points;
+		}
+
+		[[nodiscard]] inline auto get_num_cells() const
+		{
+			const auto n_cells = chs::product(sizes_);
+
+			std::size_t stored_cells = 0;
+			const auto  zeros        = chs::n_tuple<Dim>(0UL);
+			for (const auto & indices : chs::cartesian_open_bound<Dim>(zeros, sizes_))
+			{
+				if (not cell_exists(indices)) { continue; }
+				stored_cells++;
+			}
+
+			return stored_cells;
+		}
+
+		[[nodiscard]] inline auto get_num_empty_cells() const
+		{
+			const auto n_cells = chs::product(sizes_);
+
+			std::size_t empty_cells = 0;
+
+			const auto zeros = chs::n_tuple<Dim>(0);
+			for (const auto & indices : chs::cartesian_open_bound<Dim>(zeros, sizes_))
+			{
+				if (not cell_exists(indices)) { continue; }
+				const auto & cell = at(indices);
+				empty_cells += cell.empty() ? 1 : 0;
+			}
+
+			return empty_cells;
+		}
 	};
 } // namespace chs

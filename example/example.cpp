@@ -123,7 +123,7 @@ void benchmark_map(const std::string & map_name, const BuildMapFunction && build
 		std::cout << "Run #" << i + 1 << ":\n";
 		std::cout << "Benchmarking queries...\n";
 		benchmark_query<decltype(map), Points>(map, points);
-		// benchmark_knn(map, points);
+		benchmark_knn(map, points);
 		std::cout << "----------------------------------------\n";
 	}
 

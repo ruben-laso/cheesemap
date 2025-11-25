@@ -1,8 +1,11 @@
 #pragma once
 
+#include <unordered_map>
 #include <vector>
 
 #include "cheesemap/maps/CMap.hpp"
+
+#include "cheesemap/utils/inline.hpp"
 
 namespace chs
 {

@@ -4,14 +4,16 @@
 
 #include "cheesemap/maps/CMap.hpp"
 
+#include "cheesemap/utils/inline.hpp"
+
 namespace chs
 {
 	template<typename Point_type, std::size_t Dim = 3,
 	         template<typename, typename...> class HashMap = std::unordered_map>
 	class Sparse : public CMap<Point_type, Dim, Sparse<Point_type, Dim, HashMap>>
 	{
-		using Super = CMap<Point_type, Dim, Sparse<Point_type, Dim, HashMap>>;
-		friend class CMap<Point_type, Dim, Sparse<Point_type, Dim, HashMap>>;
+		using Super = CMap<Point_type, Dim, Sparse>;
+		friend class CMap<Point_type, Dim, Sparse>;
 
 		protected:
 		using resolution_type = typename Super::resolution_type;

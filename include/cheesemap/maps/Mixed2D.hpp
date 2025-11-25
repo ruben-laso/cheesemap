@@ -1,8 +1,12 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "cheesemap/maps/SmartSlice.hpp"
 
 #include "cheesemap/maps/CMap.hpp"
+
+#include "cheesemap/utils/inline.hpp"
 
 namespace chs
 {

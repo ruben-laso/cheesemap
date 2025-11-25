@@ -44,20 +44,8 @@ auto main(const int argc, const char * const argv[]) -> int
 	        chs::flags::build::SHRINK_TO_FIT | //
 	        0;
 
-	benchmark_map(
-	        "chs::OldDense<2>", [&](auto & pts) { return chs::OldDense<chs::Point, 2>(pts, 1.0, flags); }, points);
-	benchmark_map(
-	        "chs::OldDense<3>", [&](auto & pts) { return chs::OldDense<chs::Point, 3>(pts, 1.0, flags); }, points);
-
 	benchmark_map("chs::Dense<2>", [&](auto & pts) { return chs::Dense<chs::Point, 2>(pts, 1.0, flags); }, points);
 	benchmark_map("chs::Dense<3>", [&](auto & pts) { return chs::Dense<chs::Point, 3>(pts, 1.0, flags); }, points);
-
-	benchmark_map(
-	        "chs::OldSparse<2, std::unordered_map>",
-	        [&](auto & pts) { return chs::OldSparse<chs::Point, 2, std::unordered_map>(pts, 1.0, flags); }, points);
-	benchmark_map(
-	        "chs::OldSparse<3, std::unordered_map>",
-	        [&](auto & pts) { return chs::OldSparse<chs::Point, 3, std::unordered_map>(pts, 1.0, flags); }, points);
 
 	benchmark_map(
 	        "chs::Sparse<2, std::unordered_map>",
@@ -79,11 +67,6 @@ auto main(const int argc, const char * const argv[]) -> int
 	benchmark_map(
 	        "chs::Sparse<3, absl::flat_hash_map>",
 	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, absl::flat_hash_map>(pts, 1.0, flags); }, points);
-
-	benchmark_map(
-	        "chs::OldMixed<2>", [&](auto & pts) { return chs::OldMixed<chs::Point, 2>(pts, 5.0, flags); }, points);
-	benchmark_map(
-	        "chs::OldMixed<3>", [&](auto & pts) { return chs::OldMixed<chs::Point, 3>(pts, 5.0, flags); }, points);
 
 	benchmark_map("chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<chs::Point, 2>(pts, 5.0, flags); }, points);
 	benchmark_map("chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<chs::Point, 3>(pts, 5.0, flags); }, points);

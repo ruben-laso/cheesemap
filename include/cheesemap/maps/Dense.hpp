@@ -1,6 +1,10 @@
 #pragma once
 
+#include <vector>
+
 #include "cheesemap/maps/CMap.hpp"
+
+#include "cheesemap/utils/inline.hpp"
 
 namespace chs
 {

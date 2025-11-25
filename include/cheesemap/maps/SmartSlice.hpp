@@ -10,7 +10,7 @@
 
 namespace chs::slice
 {
-	template<typename Point_type>
+	template<typename Point_type, template<typename, typename...> class HashMap = std::unordered_map>
 	class Smart
 	{
 		protected:
@@ -35,7 +35,7 @@ namespace chs::slice
 		indices_type sizes_;
 
 		// Cells of the map (using sparse representation)
-		std::unordered_map<std::size_t, cell_type> cells_sparse_;
+		HashMap<std::size_t, cell_type> cells_sparse_;
 
 		// Cells of the map (using dense representation)
 		std::vector<cell_type> cells_dense_;
@@ -211,69 +211,34 @@ namespace chs::slice
 			}
 		}
 
-		[[nodiscard]] inline auto at(const indices_type & indices)
-		        -> std::optional<std::reference_wrapper<cell_type>>
+		[[nodiscard]] CHSINLINE auto find(const indices_type & indices) -> cell_type *
 		{
-			const auto idx = indices2global(indices);
+			const auto & gbl_idx = indices2global(indices);
 
 			if (use_sparse_)
 			{
-				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
-				{
-					return { cell_it->second };
-				}
-				return std::nullopt;
+				const auto it = cells_sparse_.find(gbl_idx);
+				return it == cells_sparse_.end() ? nullptr : &(it->second);
 			}
-
-			return { cells_dense_[idx] };
+			return &cells_dense_[gbl_idx];
 		}
 
-		[[nodiscard]] inline auto at(const indices_type & indices) const
-		        -> std::optional<std::reference_wrapper<const cell_type>>
+		[[nodiscard]] CHSINLINE auto find(const indices_type & indices) const -> const cell_type *
 		{
-			const auto idx = indices2global(indices);
-
+			const auto gbl_idx = indices2global(indices);
 			if (use_sparse_)
 			{
-				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
-				{
-					return { cell_it->second };
-				}
-				return std::nullopt;
+				const auto it = cells_sparse_.find(gbl_idx);
+				return it == cells_sparse_.end() ? nullptr : &(it->second);
 			}
-
-			return { cells_dense_[idx] };
+			return &cells_dense_[gbl_idx];
 		}
 
-		[[nodiscard]] inline auto mem_footprint() const
+		[[nodiscard]] CHSINLINE auto at(const indices_type & indices) -> cell_type * { return find(indices); }
+
+		[[nodiscard]] CHSINLINE auto at(const indices_type & indices) const -> const cell_type *
 		{
-			std::size_t bytes = sizeof(*this);
-
-			if (use_sparse_)
-			{
-				// From https://stackoverflow.com/a/25438497
-				bytes +=
-				        // data list: #elements * (bucket size + pointers to next)
-				        (cells_sparse_.size() * (sizeof(typename decltype(cells_sparse_)::value_type) +
-				                                 sizeof(void *)) +
-				         // bucket index: #buckets * (pointer to bucket + size)
-				         cells_sparse_.bucket_count() * (sizeof(void *) + sizeof(size_t)));
-
-				for (const auto & [idx, cell] : cells_sparse_)
-				{
-					bytes += cell.capacity() * sizeof(Point_type *);
-				}
-			}
-			else
-			{
-				for (const auto & cell : cells_dense_)
-				{
-					bytes += sizeof(cell);
-					bytes += cell.capacity() * sizeof(Point_type *);
-				}
-			}
-
-			return bytes;
+			return find(indices);
 		}
 	};
 } // namespace chs::slice

@@ -3,7 +3,13 @@
 
 #include <cheesemap/cheesemap.hpp>
 
+// abseil for flat_hash_map
+#include <absl/container/flat_hash_map.h>
+
 #include "handlers.hpp"
+
+template<typename BuildMapFunction, typename Points>
+void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points);
 
 template<typename Map, typename Points>
 void benchmark_query(const Map & map, const Points & points);
@@ -24,7 +30,7 @@ auto main(const int argc, const char * const argv[]) -> int
 	std::cout << "Clock resolution: " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()
 	          << "ns\n";
 
-	std::filesystem::path path = argv[1];
+	const std::filesystem::path path = argv[1];
 
 	start       = std::chrono::high_resolution_clock::now();
 	auto points = readPointCloud(path);
@@ -32,34 +38,75 @@ auto main(const int argc, const char * const argv[]) -> int
 	std::cout << "Reading input file time: "
 	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 
-	start = std::chrono::high_resolution_clock::now();
+	constexpr auto flags =
+	        // chs::flags::build::REORDER | //
+	        // chs::flags::build::PARALLEL | //
+	        chs::flags::build::SHRINK_TO_FIT | //
+	        0;
 
-	const auto flags = chs::flags::build::REORDER | chs::flags::build::PARALLEL | chs::flags::build::SHRINK_TO_FIT;
+	benchmark_map("chs::Dense<2>", [&](auto & pts) { return chs::Dense<chs::Point, 2>(pts, 1.0, flags); }, points);
+	benchmark_map("chs::Dense<3>", [&](auto & pts) { return chs::Dense<chs::Point, 3>(pts, 1.0, flags); }, points);
 
-	static constexpr std::size_t Dims = 3;
+	benchmark_map(
+	        "chs::Sparse<2, std::unordered_map>",
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, std::unordered_map>(pts, 1.0, flags); }, points);
+	benchmark_map(
+	        "chs::Sparse<3, std::unordered_map>",
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, std::unordered_map>(pts, 1.0, flags); }, points);
 
-	// auto map = chs::Dense<chs::Point, Dims>(points, 5.0, flags);
-	// auto map = chs::Sparse<chs::Point, Dims>(points, 5.0, flags);
-	auto map = chs::Mixed<chs::Point, Dims>(points, 5.0, flags);
+	benchmark_map(
+	        "chs::Sparse<2, std::map>",
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, std::map>(pts, 1.0, flags); }, points);
+	benchmark_map(
+	        "chs::Sparse<3, std::map>",
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, std::map>(pts, 1.0, flags); }, points);
 
-	end = std::chrono::high_resolution_clock::now();
-	std::cout << "chs:: map build time: "
-	          << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
+	benchmark_map(
+	        "chs::Sparse<2, absl::flat_hash_map>",
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, absl::flat_hash_map>(pts, 1.0, flags); }, points);
+	benchmark_map(
+	        "chs::Sparse<3, absl::flat_hash_map>",
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, absl::flat_hash_map>(pts, 1.0, flags); }, points);
 
-	const auto bytes = map.mem_footprint();
-	const auto mb    = bytes / (1024.0 * 1024.0);
-	std::cout << "Estimated mem. footprint: " << map.mem_footprint() << " Bytes (" << mb << "MB)" << '\n';
+	benchmark_map("chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<chs::Point, 2>(pts, 5.0, flags); }, points);
+	benchmark_map("chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<chs::Point, 3>(pts, 5.0, flags); }, points);
+
+	benchmark_map(
+	        "chs::Mixed<2, absl::flat_hash_map>",
+	        [&](auto & pts) { return chs::Mixed<chs::Point, 2, absl::flat_hash_map>(pts, 5.0, flags); }, points);
+	benchmark_map(
+	        "chs::Mixed<3, absl::flat_hash_map>",
+	        [&](auto & pts) { return chs::Mixed<chs::Point, 3, absl::flat_hash_map>(pts, 5.0, flags); }, points);
+
+	return EXIT_SUCCESS;
+}
+
+auto percent(const auto & part, const auto & total) -> double
+{
+	return (static_cast<double>(part) / static_cast<double>(total)) * 100.0;
+}
+
+template<typename BuildMapFunction, typename Points>
+void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points)
+{
+	std::cout << "----------------------------------------\n";
+	std::cout << "Benchmarking map: " << map_name << '\n';
+
+	const auto start = std::chrono::high_resolution_clock::now();
+	const auto map   = build_map(points);
+	const auto end   = std::chrono::high_resolution_clock::now();
+	std::cout << "chs:: map build time: " << std::chrono::duration<double>(end - start).count() << " s\n";
 
 	const auto points_per_cell = map.points_per_cell();
 	const auto non_empty_cells = ranges::count_if(points_per_cell, [](const auto & count) { return count > 0; });
 	std::cout << "Number of cells: " << points_per_cell.size() << '\n';
 	std::cout << "Number of non-empty cells: " << non_empty_cells << " ("
-	          << (non_empty_cells * 100.0 / points_per_cell.size()) << "%)\n";
+	          << percent(non_empty_cells, points_per_cell.size()) << "%)\n";
 
 	// Count stored cells
 	const auto stored_cells    = map.cells_stored();
 	const auto no_stored_cells = ranges::count_if(stored_cells, [](const auto & exists) { return exists; });
-	std::cout << "Stored cells: " << no_stored_cells << " (" << (no_stored_cells * 100.0 / points_per_cell.size())
+	std::cout << "Stored cells: " << no_stored_cells << " (" << percent(no_stored_cells, points_per_cell.size())
 	          << "%)\n";
 
 	// Compute average points per cell
@@ -71,12 +118,18 @@ auto main(const int argc, const char * const argv[]) -> int
 	        ranges::accumulate(points_per_cell, 0.0, std::plus<>()) / static_cast<double>(non_empty_cells);
 	std::cout << "Average points per non-empty cell: " << av_points_per_non_empty_cell << '\n';
 
-	benchmark_query(map, points);
+	for (const auto i : ranges::views::iota(0, 1))
+	{
+		std::cout << "Run #" << i + 1 << ":\n";
+		std::cout << "Benchmarking queries...\n";
+		benchmark_query<decltype(map), Points>(map, points);
+		// benchmark_knn(map, points);
+		std::cout << "----------------------------------------\n";
+	}
 
-	benchmark_knn(map, points);
-
-	return EXIT_SUCCESS;
+	std::cout << "========================================\n";
 }
+
 
 template<typename Map, typename Points>
 void benchmark_query(const Map & map, const Points & points)
@@ -85,10 +138,10 @@ void benchmark_query(const Map & map, const Points & points)
 	std::size_t min_neighs = std::numeric_limits<std::size_t>::max();
 	double      ave_neighs = 0.0;
 
-	static constexpr std::size_t NUM_SEARCHES = 100'000;
+	static constexpr std::size_t NUM_SEARCHES = 1'000'000;
 
 	std::size_t ns_map = 0;
-	for (const auto & p : points | ranges::views::take(NUM_SEARCHES))
+	for (const auto & p : points | ranges::views::sample(NUM_SEARCHES))
 	{
 		chs::kernels::Sphere<3> search(p, 2.5);
 

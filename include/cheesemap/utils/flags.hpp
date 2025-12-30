@@ -6,9 +6,10 @@ namespace chs::flags::build
 {
 	enum
 	{
-		PARALLEL      = 1 << 0,
-		REORDER       = 1 << 1,
-		SHRINK_TO_FIT = 1 << 2,
+		PARALLEL       = 1 << 0,
+		REORDER        = 1 << 1,
+		SHRINK_TO_FIT  = 1 << 2,
+		REORDER_MORTON = 1 << 3
 	};
 
 	using flags_t = std::size_t;

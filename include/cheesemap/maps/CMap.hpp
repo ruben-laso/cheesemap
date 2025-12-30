@@ -14,6 +14,7 @@
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
 #include "cheesemap/utils/sorted_vector.hpp"
+#include "cheesemap/utils/morton.hpp"
 
 #include "cheesemap/utils/arithmetic.hpp"
 #include "cheesemap/utils/Cartesian.hpp"
@@ -179,6 +180,20 @@ namespace chs
 #endif
 					std::sort(points.begin(), points.end(), cmp);
 			}
+			else if (flags & chs::flags::build::REORDER_MORTON)
+			{
+				const auto cmp = [&](const auto & a, const auto & b) {
+					return chs::morton::morton<Dim>(a, box_) < chs::morton::morton<Dim>(b, box_);
+				};
+#ifdef __cpp_lib_execution
+				if (flags & chs::flags::build::PARALLEL)
+				{
+					std::sort(std::execution::par_unseq, points.begin(), points.end(), cmp);
+				}
+				else
+#endif
+					std::sort(points.begin(), points.end(), cmp);
+			}
 
 			// Assign points to cells
 			ranges::for_each(points, [&](auto & point) { add_point(coord2indices(point), &point); });
@@ -254,8 +269,6 @@ namespace chs
 			chs::sorted_vector<std::pair<double, Point_type *>> candidates(k);
 
 			// Taboo list (to avoid visiting the same cell twice)
-			const auto center_idx = coord2indices(p);
-
 			auto taboo_mins = chs::n_tuple<Dim>(std::numeric_limits<std::size_t>::max());
 			auto taboo_maxs = chs::n_tuple<Dim>(std::numeric_limits<std::size_t>::max());
 
@@ -319,7 +332,10 @@ namespace chs
 					next_radius = std::min(density_based_radius,
 					                       search_radius + default_radius_increment);
 				}
-				else { next_radius = search_radius + default_radius_increment; }
+				else
+				{
+					next_radius = search_radius + default_radius_increment;
+				}
 			}
 
 			ranges::for_each(candidates,

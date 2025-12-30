@@ -40,43 +40,56 @@ auto main(const int argc, const char * const argv[]) -> int
 
 	constexpr auto flags =
 	        // chs::flags::build::REORDER | //
+	        // chs::flags::build::REORDER_MORTON | //
 	        // chs::flags::build::PARALLEL | //
 	        chs::flags::build::SHRINK_TO_FIT | //
 	        0;
 
-	benchmark_map("chs::Dense<2>", [&](auto & pts) { return chs::Dense<chs::Point, 2>(pts, 1.0, flags); }, points);
-	benchmark_map("chs::Dense<3>", [&](auto & pts) { return chs::Dense<chs::Point, 3>(pts, 1.0, flags); }, points);
+	static constexpr auto cell_size = 1.0;
+
+	benchmark_map(
+	        "chs::Dense<2>", [&](auto & pts) { return chs::Dense<chs::Point, 2>(pts, cell_size, flags); }, points);
+	benchmark_map(
+	        "chs::Dense<3>", [&](auto & pts) { return chs::Dense<chs::Point, 3>(pts, cell_size, flags); }, points);
 
 	benchmark_map(
 	        "chs::Sparse<2, std::unordered_map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, std::unordered_map>(pts, 1.0, flags); }, points);
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, std::unordered_map>(pts, cell_size, flags); },
+	        points);
 	benchmark_map(
 	        "chs::Sparse<3, std::unordered_map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, std::unordered_map>(pts, 1.0, flags); }, points);
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, std::unordered_map>(pts, cell_size, flags); },
+	        points);
 
 	benchmark_map(
 	        "chs::Sparse<2, std::map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, std::map>(pts, 1.0, flags); }, points);
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, std::map>(pts, cell_size, flags); }, points);
 	benchmark_map(
 	        "chs::Sparse<3, std::map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, std::map>(pts, 1.0, flags); }, points);
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, std::map>(pts, cell_size, flags); }, points);
 
 	benchmark_map(
 	        "chs::Sparse<2, absl::flat_hash_map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, absl::flat_hash_map>(pts, 1.0, flags); }, points);
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, absl::flat_hash_map>(pts, cell_size, flags); },
+	        points);
 	benchmark_map(
 	        "chs::Sparse<3, absl::flat_hash_map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, absl::flat_hash_map>(pts, 1.0, flags); }, points);
+	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, absl::flat_hash_map>(pts, cell_size, flags); },
+	        points);
 
-	benchmark_map("chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<chs::Point, 2>(pts, 5.0, flags); }, points);
-	benchmark_map("chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<chs::Point, 3>(pts, 5.0, flags); }, points);
+	benchmark_map(
+	        "chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<chs::Point, 2>(pts, cell_size, flags); }, points);
+	benchmark_map(
+	        "chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<chs::Point, 3>(pts, cell_size, flags); }, points);
 
 	benchmark_map(
 	        "chs::Mixed<2, absl::flat_hash_map>",
-	        [&](auto & pts) { return chs::Mixed<chs::Point, 2, absl::flat_hash_map>(pts, 5.0, flags); }, points);
+	        [&](auto & pts) { return chs::Mixed<chs::Point, 2, absl::flat_hash_map>(pts, cell_size, flags); },
+	        points);
 	benchmark_map(
 	        "chs::Mixed<3, absl::flat_hash_map>",
-	        [&](auto & pts) { return chs::Mixed<chs::Point, 3, absl::flat_hash_map>(pts, 5.0, flags); }, points);
+	        [&](auto & pts) { return chs::Mixed<chs::Point, 3, absl::flat_hash_map>(pts, cell_size, flags); },
+	        points);
 
 	return EXIT_SUCCESS;
 }

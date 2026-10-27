@@ -21,14 +21,14 @@ namespace chs
 
 		[[nodiscard]] auto closest_distance_within(const Point & p) const
 		{
-			const auto dx = std::min({ chs::distance(p, Point{ min_[0], p[1], p[2] }),
-			                           chs::distance(p, Point{ max_[0], p[1], p[2] }) });
-			const auto dy = std::min({ chs::distance(p, Point{ p[0], min_[1], p[2] }),
-			                           chs::distance(p, Point{ p[0], max_[1], p[2] }) });
-			const auto dz = std::min({ chs::distance(p, Point{ p[0], p[1], min_[2] }),
-			                           chs::distance(p, Point{ p[0], p[1], max_[2] }) });
+			const auto dx = std::min({ chs::sq_distance(p, Point{ min_[0], p[1], p[2] }),
+			                           chs::sq_distance(p, Point{ max_[0], p[1], p[2] }) });
+			const auto dy = std::min({ chs::sq_distance(p, Point{ p[0], min_[1], p[2] }),
+			                           chs::sq_distance(p, Point{ p[0], max_[1], p[2] }) });
+			const auto dz = std::min({ chs::sq_distance(p, Point{ p[0], p[1], min_[2] }),
+			                           chs::sq_distance(p, Point{ p[0], p[1], max_[2] }) });
 
-			return std::min({ dx, dy, dz });
+			return std::sqrt(std::min({ dx, dy, dz }));
 		}
 
 		public:
@@ -43,21 +43,22 @@ namespace chs
 		[[nodiscard]] inline auto is_inside(const Point & p) const -> bool
 		{
 			return ranges::all_of(ranges::views::indices(Dim),
-			                      [&](const auto i) { return min_[i] <= p[i] && p[i] <= max_[i]; });
+			                      [&](const auto i) { return min_[i] <= p[i] and p[i] <= max_[i]; });
 		}
 
 		[[nodiscard]] inline auto min() const -> const auto & { return min_; }
 		[[nodiscard]] inline auto max() const -> const auto & { return max_; }
 
-		[[nodiscard]] inline auto corners() const -> std::vector<Point>
+		template<std::size_t Dim_ = Dim>
+		[[nodiscard]] inline auto corners() const -> std::array<Point, 1 << Dim_>
 		{
-			std::vector<Point> corners;
+			std::array<Point, 1 << Dim_> corners;
 
-			corners.push_back(min_);
-			corners.push_back(max_);
+			corners[0] = min_;
+			corners[1] = max_;
 
 			// This algorithm works for 3D boxes
-			for (const auto i : ranges::views::indices(3U))
+			for (const auto i : ranges::views::indices(Dim_))
 			{
 				auto min_i = min_;
 				auto max_i = max_;
@@ -65,8 +66,8 @@ namespace chs
 				min_i[i] = max_[i];
 				max_i[i] = min_[i];
 
-				corners.push_back(min_i);
-				corners.push_back(max_i);
+				corners[2 + 2 * i] = min_i;
+				corners[3 + 2 * i] = max_i;
 			}
 
 			return corners;
@@ -87,10 +88,8 @@ namespace chs
 
 		[[nodiscard]] auto distance(const Point & p) const
 		{
-			std::array<Point::elem_type, Dim> n;
-			n[0] = std::clamp(p[0], min_[0], max_[0]);
-			n[1] = std::clamp(p[1], min_[1], max_[1]);
-			n[2] = std::clamp(p[2], min_[2], max_[2]);
+			auto n = p;
+			chs::clamp<Dim>(n, min_, max_);
 
 			return chs::distance(p, n);
 		}

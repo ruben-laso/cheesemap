@@ -38,19 +38,13 @@ namespace chs
 		}
 
 		[[nodiscard]] CHSINLINE auto cell_exists_impl(const indices_type & indices) const -> bool
-		{
-			return find(indices) != nullptr;
-		}
+		{ return find(indices) != nullptr; }
 
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type &
-		{
-			return *find(indices);
-		}
+		{ return *find(indices); }
 
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
-		{
-			return *find(indices);
-		}
+		{ return *find(indices); }
 
 		CHSINLINE void add_point_impl(const indices_type & idx, Point * point_ptr)
 		{
@@ -92,8 +86,6 @@ namespace chs
 		template<typename Points_rng>
 		Mixed3D(Points_rng & points, dimensions_type res, const chs::flags::build::flags_t flags = {}) :
 		        CMap<Point_type, 3, Mixed3D>(points, res, flags)
-		{
-			this->init(points, res, flags);
-		}
+		{ this->init(points, res, flags); }
 	};
 } // namespace chs

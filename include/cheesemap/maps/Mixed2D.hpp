@@ -29,24 +29,16 @@ namespace chs
 		[[nodiscard]] CHSINLINE auto find(const indices_type & indices) const { return slice_.find(indices); }
 
 		[[nodiscard]] CHSINLINE auto cell_exists_impl(const indices_type & indices) const -> bool
-		{
-			return slice_.find(indices) != nullptr;
-		}
+		{ return slice_.find(indices) != nullptr; }
 
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type &
-		{
-			return *slice_.at(indices);
-		}
+		{ return *slice_.at(indices); }
 
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
-		{
-			return *slice_.at(indices);
-		}
+		{ return *slice_.at(indices); }
 
 		CHSINLINE void add_point_impl([[maybe_unused]] const indices_type & idx, Point * point_ptr)
-		{
-			slice_.add_point(*point_ptr);
-		}
+		{ slice_.add_point(*point_ptr); }
 
 		void allocate_cells_impl()
 		{
@@ -66,8 +58,6 @@ namespace chs
 		template<typename Points_rng>
 		Mixed2D(Points_rng & points, const dimensions_type & res, const chs::flags::build::flags_t flags = {}) :
 		        Super(points, res, flags), slice_(Box::mbb(points), res)
-		{
-			this->init(points, res, flags);
-		}
+		{ this->init(points, res, flags); }
 	};
 } // namespace chs

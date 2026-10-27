@@ -18,14 +18,7 @@ namespace chs::kernels
 
 		template<std::size_t... Is>
 		[[nodiscard]] inline auto is_inside(const Point & p, std::index_sequence<Is...>) const -> bool
-		{
-			bool inside = true;
-
-			// This is a fold expression: inside = \forall_i (box.min()[i] <= p[i] <= box.max()[i])
-			((inside &= box_.min()[Is] <= p[Is] and p[Is] <= box_.max()[Is]), ...);
-
-			return inside;
-		}
+		{ return ((box_.min()[Is] <= p[Is] && p[Is] <= box_.max()[Is]) && ...); }
 
 		public:
 		Cube() = delete;
@@ -38,8 +31,6 @@ namespace chs::kernels
 		[[nodiscard]] inline auto box() const -> const Box & { return box_; }
 
 		[[nodiscard]] inline auto is_inside(const Point & p) const -> bool
-		{
-			return is_inside(p, std::make_index_sequence<Dim>{});
-		}
+		{ return is_inside(p, std::make_index_sequence<Dim>{}); }
 	};
 } // namespace chs::kernels

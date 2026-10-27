@@ -25,34 +25,22 @@ namespace chs
 		HashMap<std::size_t, cell_type> cells_;
 
 		[[nodiscard]] CHSINLINE auto find(const indices_type & indices)
-		{
-			return cells_.find(this->indices2global(indices));
-		}
+		{ return cells_.find(this->indices2global(indices)); }
 
 		[[nodiscard]] CHSINLINE auto find(const indices_type & indices) const
-		{
-			return cells_.find(this->indices2global(indices));
-		}
+		{ return cells_.find(this->indices2global(indices)); }
 
 		[[nodiscard]] CHSINLINE auto cell_exists_impl(const indices_type & indices) const -> bool
-		{
-			return find(indices) != cells_.end();
-		}
+		{ return find(indices) != cells_.end(); }
 
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type &
-		{
-			return find(indices)->second;
-		}
+		{ return find(indices)->second; }
 
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
-		{
-			return find(indices)->second;
-		}
+		{ return find(indices)->second; }
 
 		CHSINLINE void add_point_impl(const indices_type & idx, Point * point_ptr)
-		{
-			cells_[this->indices2global(idx)].emplace_back(point_ptr);
-		}
+		{ cells_[this->indices2global(idx)].emplace_back(point_ptr); }
 
 		void allocate_cells_impl()
 		{
@@ -78,8 +66,6 @@ namespace chs
 		template<typename Points_rng>
 		Sparse(Points_rng & points, dimensions_type res, const chs::flags::build::flags_t flags = {}) :
 		        Super(points, res, flags)
-		{
-			this->init(points, res, flags);
-		}
+		{ this->init(points, res, flags); }
 	};
 } // namespace chs

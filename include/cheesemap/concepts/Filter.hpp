@@ -12,8 +12,6 @@ namespace chs::concepts
 	 */
 	template<typename Filter_type, typename Point_type>
 	concept Filter = requires(Filter_type filter, const Point_type & point) {
-		{
-			filter(point)
-		} -> std::convertible_to<bool>;
+		{ filter(point) } -> std::convertible_to<bool>;
 	};
 } // namespace chs::concepts

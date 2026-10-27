@@ -31,8 +31,6 @@ namespace chs::kernels
 		[[nodiscard]] inline auto box() const -> const Box & { return box_; }
 
 		[[nodiscard]] inline auto is_inside(const Point & p) const -> bool
-		{
-			return chs::sq_distance<Dim>(center_, p) <= sq_radius_;
-		}
+		{ return chs::sq_distance<Dim>(center_, p) <= sq_radius_; }
 	};
 } // namespace chs::kernels

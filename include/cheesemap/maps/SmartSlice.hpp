@@ -52,15 +52,8 @@ namespace chs::slice
 
 		inline void add_point_sparse(Point_type & point)
 		{
-			const auto idx = indices2global(coord2indices(point));
-
-			auto cells_it = cells_sparse_.find(idx);
-
-			if (cells_it == cells_sparse_.end())
-			{
-				cells_sparse_.emplace(idx, cell_type{});
-				cells_it = cells_sparse_.find(idx);
-			}
+			const auto idx      = indices2global(coord2indices(point));
+			auto       cells_it = cells_sparse_.try_emplace(idx).first;
 
 			cells_it->second.emplace_back(&point);
 
@@ -69,22 +62,16 @@ namespace chs::slice
 
 		inline void sparse2dense()
 		{
-			cells_dense_ = {};
+			cells_dense_.clear();
+			cells_dense_.resize(size());
 
-			for (const auto indices :
-			     ranges::views::cartesian_product(ranges::views::indices(std::get<0>(sizes_)),
-			                                      ranges::views::indices(std::get<1>(sizes_))))
+			for (auto & [idx, cell] : cells_sparse_)
 			{
-				const auto idx = indices2global(indices);
-				if (const auto cell_it = cells_sparse_.find(idx); cell_it != cells_sparse_.end())
-				{
-					cells_dense_.emplace_back(std::move(cell_it->second));
-				}
-				else { cells_dense_.emplace_back(cell_type{}); }
+				cells_dense_[idx] = std::move(cell);
 			}
 
-			use_sparse_   = false;
-			cells_sparse_ = {};
+			use_sparse_ = false;
+			cells_sparse_.clear();
 		}
 
 		inline void dense2sparse()
@@ -165,14 +152,10 @@ namespace chs::slice
 		}
 
 		[[nodiscard]] inline auto coord2indices(const Point & p) const
-		{
-			return coord2indices(p, std::make_index_sequence<Dim>{});
-		}
+		{ return coord2indices(p, std::make_index_sequence<Dim>{}); }
 
 		[[nodiscard]] inline auto indices2global(const indices_type & indices) const
-		{
-			return std::get<0>(indices) * std::get<1>(sizes_) + std::get<1>(indices);
-		}
+		{ return std::get<0>(indices) * std::get<1>(sizes_) + std::get<1>(indices); }
 
 		template<std::size_t... Is>
 		[[nodiscard]] inline auto idx2box(const auto & idx, std::index_sequence<Is...>) const
@@ -189,14 +172,15 @@ namespace chs::slice
 		}
 
 		[[nodiscard]] inline auto idx2box(const auto & idx) const
-		{
-			return idx2box(idx, std::make_index_sequence<Dim>{});
-		}
+		{ return idx2box(idx, std::make_index_sequence<Dim>{}); }
 
 		inline void add_point(Point_type & point)
 		{
 			if (use_sparse_) { add_point_sparse(point); }
-			else { add_point_dense(point); }
+			else
+			{
+				add_point_dense(point);
+			}
 		}
 
 		inline void shrink_to_fit()
@@ -237,8 +221,6 @@ namespace chs::slice
 		[[nodiscard]] CHSINLINE auto at(const indices_type & indices) -> cell_type * { return find(indices); }
 
 		[[nodiscard]] CHSINLINE auto at(const indices_type & indices) const -> const cell_type *
-		{
-			return find(indices);
-		}
+		{ return find(indices); }
 	};
 } // namespace chs::slice

@@ -13,8 +13,8 @@
 
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
-#include "cheesemap/utils/sorted_vector.hpp"
 #include "cheesemap/utils/morton.hpp"
+#include "cheesemap/utils/sorted_vector.hpp"
 
 #include "cheesemap/utils/arithmetic.hpp"
 #include "cheesemap/utils/Cartesian.hpp"
@@ -65,9 +65,7 @@ namespace chs
 		}
 
 		[[nodiscard]] CHSINLINE auto indices2global(const auto & indices) const
-		{
-			return indices2global(indices, std::make_index_sequence<Dim>{});
-		}
+		{ return indices2global(indices, std::make_index_sequence<Dim>{}); }
 
 		template<gbl_idx_type... Is>
 		[[nodiscard]] CHSINLINE auto idx2box(const auto & idx, std::index_sequence<Is...>) const
@@ -84,9 +82,7 @@ namespace chs
 		}
 
 		[[nodiscard]] CHSINLINE auto idx2box(const auto & idx) const
-		{
-			return idx2box(idx, std::make_index_sequence<Dim>{});
-		}
+		{ return idx2box(idx, std::make_index_sequence<Dim>{}); }
 
 		template<gbl_idx_type... Is>
 		[[nodiscard]] CHSINLINE auto coord2indices(const Point & p, std::index_sequence<Is...>) const
@@ -104,9 +100,7 @@ namespace chs
 		}
 
 		[[nodiscard]] CHSINLINE auto coord2indices(const Point & p) const
-		{
-			return coord2indices(p, std::make_index_sequence<Dim>{});
-		}
+		{ return coord2indices(p, std::make_index_sequence<Dim>{}); }
 
 		[[nodiscard]] CHSINLINE auto estimate_pts_query(const Point_type &   kernel_min,
 		                                                const Point_type &   kernel_max,
@@ -124,24 +118,16 @@ namespace chs
 		}
 
 		[[nodiscard]] auto cell_exists(const indices_type & indices) const -> bool
-		{
-			return static_cast<const Derived_type *>(this)->cell_exists_impl(indices);
-		}
+		{ return static_cast<const Derived_type *>(this)->cell_exists_impl(indices); }
 
 		[[nodiscard]] auto at(const indices_type & indices) -> cell_type &
-		{
-			return static_cast<Derived_type *>(this)->at_impl(indices);
-		}
+		{ return static_cast<Derived_type *>(this)->at_impl(indices); }
 
 		[[nodiscard]] auto at(const indices_type & indices) const -> const cell_type &
-		{
-			return static_cast<const Derived_type *>(this)->at_impl(indices);
-		}
+		{ return static_cast<const Derived_type *>(this)->at_impl(indices); }
 
 		void add_point(const indices_type & idx, Point * point_ptr)
-		{
-			return static_cast<Derived_type *>(this)->add_point_impl(idx, point_ptr);
-		}
+		{ return static_cast<Derived_type *>(this)->add_point_impl(idx, point_ptr); }
 
 		void allocate_cells() { return static_cast<Derived_type *>(this)->allocate_cells_impl(); }
 

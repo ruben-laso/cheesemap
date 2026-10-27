@@ -134,7 +134,7 @@ namespace chs
 		void shrink_to_fit() { return static_cast<Derived_type *>(this)->shrink_to_fit_impl(); }
 
 		void init(std::vector<Point_type> & points, [[maybe_unused]] dimensions_type res,
-		          chs::flags::build::flags_t flags = {})
+		          const chs::flags::build::flags_t flags = {})
 		{
 			cell_volume_ = [&]<gbl_idx_type... Is>(std::index_sequence<Is...>) {
 				return (std::get<Is>(resolutions_) * ...);

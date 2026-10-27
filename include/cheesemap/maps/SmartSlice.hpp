@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <optional>
 #include <vector>
 
 #include "cheesemap/utils/Box.hpp"

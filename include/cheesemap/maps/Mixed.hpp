@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <unordered_map>
 
 #include "cheesemap/maps/Mixed2D.hpp"
 #include "cheesemap/maps/Mixed3D.hpp"

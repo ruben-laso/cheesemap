@@ -1,7 +1,5 @@
 #pragma once
 
-#include <algorithm>
-
 #include "cheesemap/concepts/Kernel.hpp"
 
 #include "cheesemap/utils/Box.hpp"
@@ -34,3 +32,5 @@ namespace chs::kernels
 		{ return is_inside(p, std::make_index_sequence<Dim>{}); }
 	};
 } // namespace chs::kernels
+
+static_assert(chs::concepts::Kernel<chs::kernels::Cube<>, chs::Point>);

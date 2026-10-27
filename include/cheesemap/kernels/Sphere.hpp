@@ -1,9 +1,5 @@
 #pragma once
 
-#include <range/v3/numeric/accumulate.hpp>
-#include <range/v3/view/indices.hpp>
-#include <range/v3/view/transform.hpp>
-
 #include "cheesemap/concepts/Kernel.hpp"
 
 #include "cheesemap/utils/arithmetic.hpp"
@@ -34,3 +30,5 @@ namespace chs::kernels
 		{ return chs::sq_distance<Dim>(center_, p) <= sq_radius_; }
 	};
 } // namespace chs::kernels
+
+static_assert(chs::concepts::Kernel<chs::kernels::Sphere<>, chs::Point>);

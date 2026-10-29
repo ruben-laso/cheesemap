@@ -1,6 +1,8 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
+#include <type_traits>
 #include <utility>
 
 #include <cmath>
@@ -10,6 +12,14 @@
 
 namespace chs
 {
+	template<std::size_t Dim>
+	static constexpr void fill(auto & p, const auto && get_val)
+	{
+		[&]<std::size_t... Is>(std::index_sequence<Is...>) {
+			((p[Is] = get_val(Is)), ...);
+		}(std::make_index_sequence<Dim>{});
+	}
+
 	template<std::size_t N>
 	[[nodiscard]] CHSINLINE constexpr auto n_array(const auto & val)
 	{
@@ -81,14 +91,10 @@ namespace chs
 	[[nodiscard]] CHSINLINE auto product(const auto & a)
 	{ return product(a, std::make_index_sequence<Dim>{}); }
 
-	// use std::get if available
 	template<std::size_t... Is>
 	[[nodiscard]] CHSINLINE auto volume_bbox(const auto & min, const auto & max, std::index_sequence<Is...>)
 	        -> double
-	{
-		// return ((std::get<Is>(max) - std::get<Is>(min)) * ...);
-		return ((max[Is] - min[Is]) * ...);
-	}
+	{ return ((max[Is] - min[Is]) * ...); }
 
 	template<std::size_t Dim = 3>
 	[[nodiscard]] CHSINLINE auto volume_bbox(const auto & min, const auto & max) -> double

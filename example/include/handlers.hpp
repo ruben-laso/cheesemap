@@ -24,7 +24,7 @@
 
 #include "TxtFileReader.hpp"
 
-std::vector<chs::Point> readPointCloud(const std::filesystem::path & file)
+std::vector<example::Point> readPointCloud(const std::filesystem::path & file)
 {
 	TxtFileReader fileReader{ file };
 

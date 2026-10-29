@@ -22,6 +22,8 @@
 #include <iostream>
 #include <vector>
 
+#include "Point.hpp"
+
 namespace fs = std::filesystem;
 
 /**
@@ -46,5 +48,5 @@ class FileReader
 	 */
 	FileReader(const fs::path & path) : path_(path) {}
 	virtual ~FileReader() {} // Every specialization of this class must manage its own destruction
-	virtual std::vector<chs::Point> read() = 0;
+	virtual std::vector<example::Point> read() = 0;
 };

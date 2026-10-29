@@ -2,7 +2,6 @@
 
 include(CMakeFindDependencyMacro)
 find_dependency(range-v3)
-find_dependency(Armadillo)
 
 if (@cheesemap_PARALLEL@)
     find_dependency(TBB)

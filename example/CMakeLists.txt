@@ -11,6 +11,7 @@ endif ()
 
 # Use package abseil
 find_package(absl REQUIRED)
+find_package(Armadillo REQUIRED)
 
 add_custom_target(run-examples)
 
@@ -19,6 +20,8 @@ function(add_example NAME)
     target_include_directories("${NAME}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
     target_link_libraries("${NAME}" PRIVATE cheesemap::cheesemap)
     target_link_libraries("${NAME}" PRIVATE absl::base absl::flat_hash_map)
+    target_link_libraries("${NAME}" PRIVATE ${ARMADILLO_LIBRARIES})
+    target_include_directories("${NAME}" PRIVATE ${ARMADILLO_INCLUDE_DIRS})
     target_compile_features("${NAME}" PRIVATE cxx_std_20)
     add_custom_target("run_${NAME}" COMMAND "${NAME}" VERBATIM)
     add_dependencies("run_${NAME}" "${NAME}")

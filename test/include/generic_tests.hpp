@@ -31,7 +31,8 @@ namespace chs::test
 		}
 	}
 
-	void spherical_search(auto && map_build_func)
+	template<typename KernelType>
+	void kernel_search(auto && map_build_func)
 	{
 		static constexpr std::size_t num_builds = 20;
 		static constexpr std::size_t num_points = 10'000;
@@ -57,13 +58,13 @@ namespace chs::test
 				                                              { max_coord, max_coord, max_coord });
 				const auto radius = get_random(0.0, chs::mockup::DEFAULT_SEARCH_RADIUS);
 
-				const auto sphere = chs::kernels::Sphere<3>(center, radius);
+				const auto kernel = KernelType(center, radius);
 
-				const auto results_map = map.query(sphere);
+				const auto results_map = map.query(kernel);
 
 				const auto results_truth =
 				        ranges::views::filter(points,
-				                              [&sphere](auto & p) { return sphere.is_inside(p); }) |
+				                              [&kernel](auto & p) { return kernel.is_inside(p); }) |
 				        ranges::views::addressof | ranges::to<std::vector>();
 
 				EXPECT_TRUE(are_the_same(results_map, results_truth));
@@ -71,7 +72,8 @@ namespace chs::test
 		}
 	}
 
-	void spherical_search_filter(auto && map_build_func)
+	template<typename KernelType>
+	void kernel_search_filter(auto && map_build_func)
 	{
 		static constexpr std::size_t num_builds = 20;
 		static constexpr std::size_t num_points = 10'000;
@@ -97,15 +99,15 @@ namespace chs::test
 				                                              { max_coord, max_coord, max_coord });
 				const auto radius = get_random(0.0, chs::mockup::DEFAULT_SEARCH_RADIUS);
 
-				const auto sphere = chs::kernels::Sphere<3>(center, radius);
+				const auto kernel = KernelType(center, radius);
 
 				const auto filter = [](auto & p) { return p[0] > 50.0; };
 
-				const auto results_map = map.query(sphere, filter);
+				const auto results_map = map.query(kernel, filter);
 
 				const auto results_truth =
 				        ranges::views::filter(
-				                points, [&](auto & p) { return sphere.is_inside(p) and filter(p); }) |
+				                points, [&](auto & p) { return kernel.is_inside(p) and filter(p); }) |
 				        ranges::views::addressof | ranges::to<std::vector>();
 
 				EXPECT_TRUE(are_the_same(results_map, results_truth));
@@ -147,7 +149,7 @@ namespace chs::test
 				const auto results_map = map.knn(k, center);
 
 				auto get_truth = [&]() {
-					using dist_point = std::pair<double, chs::Point *>;
+					using dist_point = std::pair<double, chs::mockup::Point *>;
 
 					std::vector<dist_point> dist_points;
 					dist_points.reserve(points.size());

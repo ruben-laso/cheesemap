@@ -3,9 +3,7 @@
 #include <gtest/gtest.h>
 
 TEST(chs, chs_exists)
-{
-	EXPECT_TRUE(true);
-}
+{ EXPECT_TRUE(true); }
 
 auto main() -> int
 {

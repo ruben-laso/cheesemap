@@ -10,7 +10,7 @@ TEST(chs, chs_smart_slice_build)
 {
 	auto points = chs::mockup::naive_points();
 
-	EXPECT_NO_THROW(const auto map = chs::slice::Smart<chs::Point>(points, CELL_SIZE));
+	EXPECT_NO_THROW(const auto map = chs::slice::Smart<chs::mockup::Point>(points, CELL_SIZE));
 }
 
 TEST(chs, chs_smart_slice_build_random)
@@ -28,18 +28,18 @@ TEST(chs, chs_smart_slice_build_random)
 		auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                         { max_coord, max_coord, max_coord });
 
-		EXPECT_NO_THROW(const auto map = chs::slice::Smart<chs::Point>(points, CELL_SIZE));
+		EXPECT_NO_THROW(const auto map = chs::slice::Smart<chs::mockup::Point>(points, CELL_SIZE));
 	}
 }
 
 TEST(chs, chs_smart_slice_sparsity)
 {
-	const auto cell_size = 5.0;
-	chs::Point min{ 0.0, 0.0, 0.0 };
-	chs::Point max{ 10.0, 10.0, 10.0 };
-	chs::Box   box{ std::make_pair(min, max) };
+	const auto                      cell_size = 5.0;
+	chs::mockup::Point              min{ 0.0, 0.0, 0.0 };
+	chs::mockup::Point              max{ 10.0, 10.0, 10.0 };
+	chs::Box<chs::mockup::Point, 2> box{ std::make_pair(min, max) };
 
-	auto slice = chs::slice::Smart<chs::Point>(box, cell_size);
+	auto slice = chs::slice::Smart<chs::mockup::Point>(box, cell_size);
 
 	EXPECT_TRUE(slice.sparse());
 	EXPECT_DOUBLE_EQ(slice.density(), 0.0);

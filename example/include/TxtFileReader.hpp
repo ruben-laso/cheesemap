@@ -27,7 +27,7 @@ class TxtFileReader : public FileReader
 	 * @brief Reads the points contained in the .txt/.xyz file
 	 * @return Vector of Lpoint
 	 */
-	std::vector<chs::Point> read()
+	std::vector<example::Point> read()
 	{
 		const auto split_line = [](std::string & line) {
 			std::istringstream                 buf(line);
@@ -42,7 +42,7 @@ class TxtFileReader : public FileReader
 
 		if (not file.is_open()) { throw std::runtime_error("Could not open file"); }
 
-		std::vector<chs::Point> points;
+		std::vector<example::Point> points;
 
 		while (std::getline(file, line, '\n'))
 		{

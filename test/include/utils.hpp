@@ -33,9 +33,7 @@ inline bool are_the_same(const ranges::range auto & v1_, const ranges::range aut
 }
 
 inline bool are_the_same(const ranges::range auto & v1, const ranges::range auto & v2)
-{
-	return are_the_same(v1, v2, std::equal_to{});
-}
+{ return are_the_same(v1, v2, std::equal_to{}); }
 
 template<typename T>
 auto get_random(const T & min, const T & max)
@@ -56,6 +54,4 @@ auto get_random(const T & min, const T & max)
 }
 
 auto random_bool()
-{
-	return std::cmp_equal(get_random(0, 1), 1);
-}
+{ return std::cmp_equal(get_random(0, 1), 1); }

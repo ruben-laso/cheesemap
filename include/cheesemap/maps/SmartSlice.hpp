@@ -28,7 +28,7 @@ namespace chs::slice
 		dimensions_type resolutions_ = DEFAULT_RESOLUTIONS;
 
 		// Bounding box of the map
-		Box box_;
+		Box<Point_type, Dim> box_;
 
 		// Number of cells of the map on each dimension
 		indices_type sizes_;
@@ -96,10 +96,11 @@ namespace chs::slice
 		public:
 		Smart() = delete;
 
-		Smart(const Box & box, const resolution_type res) : Smart(box, dimensions_type(chs::n_tuple<Dim>(res)))
+		Smart(const Box<Point_type, Dim> & box, const resolution_type res) :
+		        Smart(box, dimensions_type(chs::n_tuple<Dim>(res)))
 		{}
 
-		Smart(const Box & box, const dimensions_type & res) :
+		Smart(const Box<Point_type, Dim> & box, const dimensions_type & res) :
 		        resolutions_(res),
 		        box_(box),
 		        sizes_({ static_cast<std::size_t>(std::ceil((box.max()[0] - box.min()[0]) / std::get<0>(res))),
@@ -108,7 +109,7 @@ namespace chs::slice
 
 		template<typename Points_rng>
 		        requires ranges::input_range<Points_rng>
-		Smart(Points_rng & points, const resolution_type res) : Smart(Box::mbb(points), res)
+		Smart(Points_rng & points, const resolution_type res) : Smart(Box<Point_type, Dim>::mbb(points), res)
 		{
 			for (auto & point : points)
 			{
@@ -136,7 +137,7 @@ namespace chs::slice
 		}
 
 		template<std::size_t... Is>
-		[[nodiscard]] inline auto coord2indices(const Point & p, std::index_sequence<Is...>) const
+		[[nodiscard]] inline auto coord2indices(const Point_type & p, std::index_sequence<Is...>) const
 		{
 			indices_type idx;
 
@@ -150,7 +151,7 @@ namespace chs::slice
 			return idx;
 		}
 
-		[[nodiscard]] inline auto coord2indices(const Point & p) const
+		[[nodiscard]] inline auto coord2indices(const Point_type & p) const
 		{ return coord2indices(p, std::make_index_sequence<Dim>{}); }
 
 		[[nodiscard]] inline auto indices2global(const indices_type & indices) const
@@ -159,15 +160,15 @@ namespace chs::slice
 		template<std::size_t... Is>
 		[[nodiscard]] inline auto idx2box(const auto & idx, std::index_sequence<Is...>) const
 		{
-			Point min = box_.min();
-			Point max = box_.max();
+			Point_type min = box_.min();
+			Point_type max = box_.max();
 
 			(((min[Is] = box_.min()[Is] +
 			             static_cast<resolution_type>(std::get<Is>(idx)) * std::get<Is>(resolutions_)),
 			  (max[Is] = min[Is] + std::get<Is>(resolutions_))),
 			 ...);
 
-			return Box(std::make_pair(min, max));
+			return Box<Point_type, Dim>(std::make_pair(min, max));
 		}
 
 		[[nodiscard]] inline auto idx2box(const auto & idx) const

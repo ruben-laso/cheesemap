@@ -11,9 +11,9 @@
 
 TEST(chs, chs_sphere_build)
 {
-	chs::Point center{ 0.0, 0.0, 0.0 };
+	chs::mockup::Point center{ 0.0, 0.0, 0.0 };
 
-	const auto sphere = chs::kernels::Sphere<3>(center, 1.0);
+	const auto sphere = chs::kernels::Sphere<chs::mockup::Point, 3>(center, 1.0);
 
 	for (const auto & i : ranges::views::indices(3U))
 	{
@@ -32,7 +32,7 @@ TEST(chs, chs_sphere_random)
 		const auto center = chs::mockup::random_point();
 		const auto radius = get_random(0.0, 100.0);
 
-		const auto sphere = chs::kernels::Sphere<3>(center, radius);
+		const auto sphere = chs::kernels::Sphere<chs::mockup::Point, 3>(center, radius);
 
 		for (const auto & i : ranges::views::indices(3U))
 		{
@@ -45,21 +45,21 @@ TEST(chs, chs_sphere_random)
 
 TEST(chs, chs_sphere_inside)
 {
-	const auto center = chs::Point{ 0.0, 0.0, 0.0 };
+	const auto center = chs::mockup::Point{ 0.0, 0.0, 0.0 };
 	const auto radius = 1.0;
 
-	const auto sphere = chs::kernels::Sphere<3>(center, radius);
+	const auto sphere = chs::kernels::Sphere<chs::mockup::Point, 3>(center, radius);
 
-	EXPECT_TRUE(sphere.is_inside(chs::Point{ 0.0, 0.0, 0.0 }));
-	EXPECT_TRUE(sphere.is_inside(chs::Point{ 0.5, 0.5, 0.5 }));
-	EXPECT_TRUE(sphere.is_inside(chs::Point{ 1.0, 0.0, 0.0 }));
-	EXPECT_TRUE(sphere.is_inside(chs::Point{ 0.0, 1.0, 0.0 }));
-	EXPECT_TRUE(sphere.is_inside(chs::Point{ 0.0, 0.0, 1.0 }));
+	EXPECT_TRUE(sphere.is_inside(chs::mockup::Point{ 0.0, 0.0, 0.0 }));
+	EXPECT_TRUE(sphere.is_inside(chs::mockup::Point{ 0.5, 0.5, 0.5 }));
+	EXPECT_TRUE(sphere.is_inside(chs::mockup::Point{ 1.0, 0.0, 0.0 }));
+	EXPECT_TRUE(sphere.is_inside(chs::mockup::Point{ 0.0, 1.0, 0.0 }));
+	EXPECT_TRUE(sphere.is_inside(chs::mockup::Point{ 0.0, 0.0, 1.0 }));
 
-	EXPECT_FALSE(sphere.is_inside(chs::Point{ 1.0, 1.0, 1.0 }));
-	EXPECT_FALSE(sphere.is_inside(chs::Point{ 1.1, 1.1, 1.1 }));
-	EXPECT_FALSE(sphere.is_inside(chs::Point{ 2.0, 2.0, 2.0 }));
-	EXPECT_FALSE(sphere.is_inside(chs::Point{ 3.0, 3.0, 3.0 }));
+	EXPECT_FALSE(sphere.is_inside(chs::mockup::Point{ 1.0, 1.0, 1.0 }));
+	EXPECT_FALSE(sphere.is_inside(chs::mockup::Point{ 1.1, 1.1, 1.1 }));
+	EXPECT_FALSE(sphere.is_inside(chs::mockup::Point{ 2.0, 2.0, 2.0 }));
+	EXPECT_FALSE(sphere.is_inside(chs::mockup::Point{ 3.0, 3.0, 3.0 }));
 }
 
 TEST(chs, chs_sphere_inside_random)
@@ -72,7 +72,7 @@ TEST(chs, chs_sphere_inside_random)
 		const auto center = chs::mockup::random_point();
 		const auto radius = get_random(0.0, 100.0);
 
-		const auto sphere = chs::kernels::Sphere<3>(center, radius);
+		const auto sphere = chs::kernels::Sphere<chs::mockup::Point, 3>(center, radius);
 
 		// Generate random points inside the sphere
 		for ([[maybe_unused]] const auto & j : ranges::views::indices(num_points))
@@ -81,7 +81,7 @@ TEST(chs, chs_sphere_inside_random)
 			        { get_random(-1.0, 1.0), get_random(-1.0, 1.0), get_random(-1.0, 1.0) });
 			const auto dev_length = get_random(0.0, sphere.radius());
 
-			chs::Point point{ sphere.center() + dev_length * deviation };
+			chs::mockup::Point point{ sphere.center() + dev_length * deviation };
 
 			EXPECT_TRUE(sphere.is_inside(point));
 			if (not sphere.is_inside(point))
@@ -104,14 +104,14 @@ TEST(chs, chs_sphere_outside_random)
 		const auto center = chs::mockup::random_point();
 		const auto radius = get_random(0.0, 100.0);
 
-		const auto sphere = chs::kernels::Sphere<3>(center, radius);
+		const auto sphere = chs::kernels::Sphere<chs::mockup::Point, 3>(center, radius);
 
 		const auto & min = sphere.box().min();
 		const auto & max = sphere.box().max();
 
 		for ([[maybe_unused]] const auto & i : ranges::views::indices(num_checks))
 		{
-			auto outside_point = [&]() -> chs::Point {
+			auto outside_point = [&]() -> chs::mockup::Point {
 				auto       point = chs::mockup::random_point(sphere.box().min(), sphere.box().max());
 				// Randomly select coordinates to be outside the box (at least one is outside)
 				const auto num_coords_to_change = get_random(1U, 3U);

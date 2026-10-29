@@ -39,7 +39,7 @@ namespace chs
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
 		{ return find(indices)->second; }
 
-		CHSINLINE void add_point_impl(const indices_type & idx, Point * point_ptr)
+		CHSINLINE void add_point_impl(const indices_type & idx, Point_type * point_ptr)
 		{ cells_[this->indices2global(idx)].emplace_back(point_ptr); }
 
 		void allocate_cells_impl()

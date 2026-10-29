@@ -52,6 +52,9 @@ jobs:
       - name: Install Armadillo
         run: sudo apt install libarmadillo-dev -y -q
 
+      - name: Install Eigen3
+        run: sudo apt install libeigen3-dev -y -q
+
       - name: Install gtest
         run: sudo apt install libgtest-dev -y -q
 
@@ -103,6 +106,9 @@ jobs:
 
       - name: Install Armadillo
         run: sudo apt install libarmadillo-dev -y -q
+
+      - name: Install Eigen3
+        run: sudo apt install libeigen3-dev -y -q
 
       - name: Install gtest
         run: sudo apt install libgtest-dev -y -q
@@ -156,6 +162,9 @@ jobs:
 
       - name: Install Armadillo
         run: sudo apt install libarmadillo-dev -y -q
+
+      - name: Install Eigen3
+        run: sudo apt install libeigen3-dev -y -q
 
       - name: Install gtest
         run: sudo apt install libgtest-dev -y -q

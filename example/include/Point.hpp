@@ -2,7 +2,7 @@
 
 #include <armadillo>
 
-namespace chs
+namespace example
 {
 	using Point = arma::vec3;
 }

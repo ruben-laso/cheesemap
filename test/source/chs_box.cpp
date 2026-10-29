@@ -8,7 +8,7 @@ TEST(chs, chs_box_build)
 {
 	const auto points = chs::mockup::naive_points();
 
-	const auto box = chs::Box::mbb(points);
+	const auto box = chs::Box<chs::mockup::Point, 3>::mbb(points);
 
 	EXPECT_TRUE(true);
 }
@@ -26,7 +26,7 @@ TEST(chs, chs_box_build_random)
 		const auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                               { max_coord, max_coord, max_coord });
 
-		EXPECT_NO_THROW(const auto box = chs::Box::mbb(points));
+		EXPECT_NO_THROW((chs::Box<chs::mockup::Point, 3>::mbb(points)));
 	}
 }
 
@@ -34,7 +34,7 @@ TEST(chs, chs_box_max_min)
 {
 	const auto points = chs::mockup::naive_points();
 
-	const auto box = chs::Box::mbb(points);
+	const auto box = chs::Box<chs::mockup::Point, 3>::mbb(points);
 
 	const auto & min = box.min();
 	const auto & max = box.max();
@@ -48,46 +48,52 @@ TEST(chs, chs_box_max_min)
 
 TEST(chs, chs_box_corners)
 {
-	const auto points = chs::mockup::naive_points();
+	const auto min = chs::mockup::Point{ 0.0, 0.0, 0.0 };
+	const auto max = chs::mockup::Point{ 9.0, 9.0, 9.0 };
 
-	const auto box = chs::Box::mbb(points);
+	std::vector<chs::mockup::Point> points = { min, max };
 
+	const auto box     = chs::Box<chs::mockup::Point, 3>::mbb(points);
 	const auto corners = box.corners();
 
-	EXPECT_EQ(corners.size(), 8);
+	ASSERT_EQ(corners.size(), 8);
 
-	const auto min = chs::Point{ 0.0, 0.0, 0.0 };
-	const auto max = chs::Point{ 9.0, 9.0, 9.0 };
+	std::array<chs::mockup::Point, 8> expected_corners = {
+		chs::mockup::Point{ 0.0, 0.0, 0.0 }, //
+		chs::mockup::Point{ 9.0, 0.0, 0.0 }, //
+		chs::mockup::Point{ 0.0, 9.0, 0.0 }, //
+		chs::mockup::Point{ 9.0, 9.0, 0.0 }, //
+		chs::mockup::Point{ 0.0, 0.0, 9.0 }, //
+		chs::mockup::Point{ 9.0, 0.0, 9.0 }, //
+		chs::mockup::Point{ 0.0, 9.0, 9.0 }, //
+		chs::mockup::Point{ 9.0, 9.0, 9.0 },
+	};
 
 	const auto equal_pts = [](const auto & lhs, const auto & rhs) {
 		for (const auto i : ranges::views::indices(3U))
 		{
-			EXPECT_DOUBLE_EQ(lhs[i], rhs[i]);
+			EXPECT_DOUBLE_EQ(lhs[i], rhs[i]) << "Index: " << i;
 		}
 	};
 
-	equal_pts(corners[0], min);
-	equal_pts(corners[1], max);
-	equal_pts(corners[2], chs::Point{ 9.0, 0.0, 0.0 });
-	equal_pts(corners[3], chs::Point{ 0.0, 9.0, 9.0 });
-	equal_pts(corners[4], chs::Point{ 0.0, 9.0, 0.0 });
-	equal_pts(corners[5], chs::Point{ 9.0, 0.0, 9.0 });
-	equal_pts(corners[6], chs::Point{ 0.0, 0.0, 9.0 });
-	equal_pts(corners[7], chs::Point{ 9.0, 9.0, 0.0 });
+	for (const auto i : ranges::views::indices(8U))
+	{
+		equal_pts(corners[i], expected_corners[i]);
+	}
 }
 
 TEST(chs, chs_box_is_inside)
 {
 	const auto points = chs::mockup::naive_points();
 
-	const auto box = chs::Box::mbb(points);
+	const auto box = chs::Box<chs::mockup::Point, 3>::mbb(points);
 
 	for (const auto & point : points)
 	{
 		EXPECT_TRUE(box.is_inside(point));
 	}
 
-	const auto outside = chs::Point{ 10.0, 10.0, 10.0 };
+	const auto outside = chs::mockup::Point{ 10.0, 10.0, 10.0 };
 	EXPECT_FALSE(box.is_inside(outside));
 }
 
@@ -105,7 +111,7 @@ TEST(chs, chs_box_is_inside_random)
 		const auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                               { max_coord, max_coord, max_coord });
 
-		const auto box = chs::Box::mbb(points);
+		const auto box = chs::Box<chs::mockup::Point, 3>::mbb(points);
 
 		for ([[maybe_unused]] const auto i : ranges::views::indices(num_checks))
 		{
@@ -137,11 +143,11 @@ TEST(chs, chs_box_is_outside_random)
 		const auto points = chs::mockup::random_points(num_points, { min_coord, min_coord, min_coord },
 		                                               { max_coord, max_coord, max_coord });
 
-		const auto box = chs::Box::mbb(points);
+		const auto box = chs::Box<chs::mockup::Point, 3>::mbb(points);
 
 		for ([[maybe_unused]] const auto i : ranges::views::indices(num_checks))
 		{
-			auto outside_point = [&]() -> chs::Point {
+			auto outside_point = [&]() -> chs::mockup::Point {
 				auto       point                = chs::mockup::random_point(box.min(), box.max());
 				// Randomly select coordinates to be outside the box (at least one is outside)
 				const auto num_coords_to_change = get_random(1U, 3U);

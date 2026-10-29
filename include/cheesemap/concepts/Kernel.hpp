@@ -7,14 +7,15 @@
 namespace chs::concepts
 {
 	/**
-	 * @brief A concept for a search kernel.
+	 * @brief A search kernel that can test the map's point type.
 	 *
-	 * @tparam Kernel_type The type of the kernel.
-	 * @tparam Point_type The type of the point.	 *
+	 * @tparam KernelType The type of the kernel.
+	 * @tparam PointType The type of the point.
 	 */
-	template<typename Kernel_type, typename Point_type>
-	concept Kernel = requires(Kernel_type kernel, const Point_type & point, const chs::Box & box) {
+	template<typename KernelType, typename PointType>
+	concept Kernel = requires(const KernelType & kernel, const PointType & point) {
 		{ kernel.is_inside(point) } -> std::convertible_to<bool>;
-		{ kernel.box() } -> std::convertible_to<const chs::Box &>;
+		{ kernel.box() };
+		{ KernelType::dim } -> std::convertible_to<std::size_t>;
 	};
 } // namespace chs::concepts

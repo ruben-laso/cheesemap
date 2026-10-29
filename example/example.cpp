@@ -1,5 +1,7 @@
 #include <filesystem>
 #include <iostream>
+#include <map>
+#include <unordered_map>
 
 #include <cheesemap/cheesemap.hpp>
 
@@ -40,64 +42,62 @@ auto main(const int argc, const char * const argv[]) -> int
 
 	constexpr auto flags =
 	        // chs::flags::build::REORDER | //
-	        // chs::flags::build::REORDER_MORTON | //
 	        // chs::flags::build::PARALLEL | //
 	        chs::flags::build::SHRINK_TO_FIT | //
 	        0;
 
 	static constexpr auto cell_size = 1.0;
+	using Point_type                = example::Point;
 
 	benchmark_map(
-	        "chs::Dense<2>", [&](auto & pts) { return chs::Dense<chs::Point, 2>(pts, cell_size, flags); }, points);
+	        "chs::Dense<2>", [&](auto & pts) { return chs::Dense<Point_type, 2>(pts, cell_size, flags); }, points);
 	benchmark_map(
-	        "chs::Dense<3>", [&](auto & pts) { return chs::Dense<chs::Point, 3>(pts, cell_size, flags); }, points);
+	        "chs::Dense<3>", [&](auto & pts) { return chs::Dense<Point_type, 3>(pts, cell_size, flags); }, points);
 
 	benchmark_map(
 	        "chs::Sparse<2, std::unordered_map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, std::unordered_map>(pts, cell_size, flags); },
+	        [&](auto & pts) { return chs::Sparse<Point_type, 2, std::unordered_map>(pts, cell_size, flags); },
 	        points);
 	benchmark_map(
 	        "chs::Sparse<3, std::unordered_map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, std::unordered_map>(pts, cell_size, flags); },
+	        [&](auto & pts) { return chs::Sparse<Point_type, 3, std::unordered_map>(pts, cell_size, flags); },
 	        points);
 
 	benchmark_map(
 	        "chs::Sparse<2, std::map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, std::map>(pts, cell_size, flags); }, points);
+	        [&](auto & pts) { return chs::Sparse<Point_type, 2, std::map>(pts, cell_size, flags); }, points);
 	benchmark_map(
 	        "chs::Sparse<3, std::map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, std::map>(pts, cell_size, flags); }, points);
+	        [&](auto & pts) { return chs::Sparse<Point_type, 3, std::map>(pts, cell_size, flags); }, points);
 
 	benchmark_map(
 	        "chs::Sparse<2, absl::flat_hash_map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 2, absl::flat_hash_map>(pts, cell_size, flags); },
+	        [&](auto & pts) { return chs::Sparse<Point_type, 2, absl::flat_hash_map>(pts, cell_size, flags); },
 	        points);
 	benchmark_map(
 	        "chs::Sparse<3, absl::flat_hash_map>",
-	        [&](auto & pts) { return chs::Sparse<chs::Point, 3, absl::flat_hash_map>(pts, cell_size, flags); },
+	        [&](auto & pts) { return chs::Sparse<Point_type, 3, absl::flat_hash_map>(pts, cell_size, flags); },
 	        points);
 
 	benchmark_map(
-	        "chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<chs::Point, 2>(pts, cell_size, flags); }, points);
+	        "chs::Mixed<2>", [&](auto & pts) { return chs::Mixed<Point_type, 2>(pts, cell_size, flags); }, points);
 	benchmark_map(
-	        "chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<chs::Point, 3>(pts, cell_size, flags); }, points);
+	        "chs::Mixed<3>", [&](auto & pts) { return chs::Mixed<Point_type, 3>(pts, cell_size, flags); }, points);
 
 	benchmark_map(
 	        "chs::Mixed<2, absl::flat_hash_map>",
-	        [&](auto & pts) { return chs::Mixed<chs::Point, 2, absl::flat_hash_map>(pts, cell_size, flags); },
+	        [&](auto & pts) { return chs::Mixed<Point_type, 2, absl::flat_hash_map>(pts, cell_size, flags); },
 	        points);
 	benchmark_map(
 	        "chs::Mixed<3, absl::flat_hash_map>",
-	        [&](auto & pts) { return chs::Mixed<chs::Point, 3, absl::flat_hash_map>(pts, cell_size, flags); },
+	        [&](auto & pts) { return chs::Mixed<Point_type, 3, absl::flat_hash_map>(pts, cell_size, flags); },
 	        points);
 
 	return EXIT_SUCCESS;
 }
 
 auto percent(const auto & part, const auto & total) -> double
-{
-	return (static_cast<double>(part) / static_cast<double>(total)) * 100.0;
-}
+{ return (static_cast<double>(part) / static_cast<double>(total)) * 100.0; }
 
 template<typename BuildMapFunction, typename Points>
 void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points)
@@ -156,18 +156,20 @@ void benchmark_query(const Map & map, const Points & points)
 	std::size_t ns_map = 0;
 	for (const auto & p : points | ranges::views::sample(NUM_SEARCHES))
 	{
-		chs::kernels::Sphere<3> search(p, 2.5);
+		auto query = [&](const auto & search) {
+			const auto start       = std::chrono::high_resolution_clock::now();
+			const auto results_map = map.query(search);
+			const auto end         = std::chrono::high_resolution_clock::now();
 
-		const auto start       = std::chrono::high_resolution_clock::now();
-		const auto results_map = map.query(search);
-		const auto end         = std::chrono::high_resolution_clock::now();
+			ns_map += static_cast<std::size_t>(
+			        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
 
-		ns_map += static_cast<std::size_t>(
-		        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
+			max_neighs = std::max(max_neighs, results_map.size());
+			min_neighs = std::min(min_neighs, results_map.size());
+			ave_neighs += static_cast<double>(results_map.size()) / static_cast<double>(points.size());
+		};
 
-		max_neighs = std::max(max_neighs, results_map.size());
-		min_neighs = std::min(min_neighs, results_map.size());
-		ave_neighs += static_cast<double>(results_map.size()) / static_cast<double>(points.size());
+		query(chs::kernels::Sphere<typename Points::value_type, 3>(p, 2.5));
 	}
 
 	std::cout << "#Queries: " << NUM_SEARCHES << '\n';

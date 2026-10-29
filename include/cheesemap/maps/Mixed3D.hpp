@@ -46,7 +46,7 @@ namespace chs
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
 		{ return *find(indices); }
 
-		CHSINLINE void add_point_impl(const indices_type & idx, Point * point_ptr)
+		CHSINLINE void add_point_impl(const indices_type & idx, Point_type * point_ptr)
 		{
 			const auto & [i, j, k] = idx;
 			slices_[k].add_point(*point_ptr);
@@ -61,7 +61,7 @@ namespace chs
 				const auto box_max = this->idx2box(indices_type(std::get<0>(this->sizes_) - 1,
 				                                                std::get<1>(this->sizes_) - 1, k + 1));
 
-				Box slice_box{ std::make_pair(box_min.min(), box_max.max()) };
+				Box<Point_type, 2> slice_box{ std::make_pair(box_min.min(), box_max.max()) };
 				slices_.emplace_back(slice_box, std::make_tuple(std::get<0>(this->resolutions_),
 				                                                std::get<1>(this->resolutions_)));
 			}

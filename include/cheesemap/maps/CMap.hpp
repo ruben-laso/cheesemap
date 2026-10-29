@@ -2,6 +2,7 @@
 
 #include <array>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -13,7 +14,6 @@
 
 #include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cell.hpp"
-#include "cheesemap/utils/morton.hpp"
 #include "cheesemap/utils/sorted_vector.hpp"
 
 #include "cheesemap/utils/arithmetic.hpp"
@@ -34,6 +34,8 @@ namespace chs
 		using gbl_idx_type    = std::size_t;
 		using indices_type    = chs::type_traits::tuple<gbl_idx_type, Dim>;
 		using cell_type       = Cell<Point_type>;
+		using point_type      = Point_type;
+		using box_type        = Box<Point_type, Dim>;
 
 		static constexpr dimensions_type DEFAULT_RESOLUTIONS = chs::n_tuple<Dim>(resolution_type{ 1 });
 
@@ -43,7 +45,7 @@ namespace chs
 		dimensions_type resolutions_ = DEFAULT_RESOLUTIONS;
 
 		// Bounding box of the map
-		Box box_;
+		box_type box_;
 
 		// Number of cells of the map on each dimension
 		indices_type sizes_;
@@ -70,22 +72,22 @@ namespace chs
 		template<gbl_idx_type... Is>
 		[[nodiscard]] CHSINLINE auto idx2box(const auto & idx, std::index_sequence<Is...>) const
 		{
-			Point min = box_.min();
-			Point max = box_.max();
+			point_type min = box_.min();
+			point_type max = box_.max();
 
 			(((min[Is] = box_.min()[Is] +
 			             static_cast<resolution_type>(std::get<Is>(idx)) * std::get<Is>(resolutions_)),
 			  (max[Is] = min[Is] + std::get<Is>(resolutions_))),
 			 ...);
 
-			return Box(std::make_pair(min, max));
+			return box_type(std::make_pair(min, max));
 		}
 
 		[[nodiscard]] CHSINLINE auto idx2box(const auto & idx) const
 		{ return idx2box(idx, std::make_index_sequence<Dim>{}); }
 
 		template<gbl_idx_type... Is>
-		[[nodiscard]] CHSINLINE auto coord2indices(const Point & p, std::index_sequence<Is...>) const
+		[[nodiscard]] CHSINLINE auto coord2indices(const auto & p, std::index_sequence<Is...>) const
 		{
 			indices_type idx;
 
@@ -99,11 +101,10 @@ namespace chs
 			return idx;
 		}
 
-		[[nodiscard]] CHSINLINE auto coord2indices(const Point & p) const
+		[[nodiscard]] CHSINLINE auto coord2indices(const auto & p) const
 		{ return coord2indices(p, std::make_index_sequence<Dim>{}); }
 
-		[[nodiscard]] CHSINLINE auto estimate_pts_query(const Point_type &   kernel_min,
-		                                                const Point_type &   kernel_max,
+		[[nodiscard]] CHSINLINE auto estimate_pts_query(const auto & kernel_min, const auto & kernel_max,
 		                                                const indices_type & idx_min,
 		                                                const indices_type & idx_max) const
 		{
@@ -126,7 +127,7 @@ namespace chs
 		[[nodiscard]] auto at(const indices_type & indices) const -> const cell_type &
 		{ return static_cast<const Derived_type *>(this)->at_impl(indices); }
 
-		void add_point(const indices_type & idx, Point * point_ptr)
+		void add_point(const indices_type & idx, Point_type * point_ptr)
 		{ return static_cast<Derived_type *>(this)->add_point_impl(idx, point_ptr); }
 
 		void allocate_cells() { return static_cast<Derived_type *>(this)->allocate_cells_impl(); }
@@ -166,20 +167,6 @@ namespace chs
 #endif
 					std::sort(points.begin(), points.end(), cmp);
 			}
-			else if (flags & chs::flags::build::REORDER_MORTON)
-			{
-				const auto cmp = [&](const auto & a, const auto & b) {
-					return chs::morton::morton<Dim>(a, box_) < chs::morton::morton<Dim>(b, box_);
-				};
-#ifdef __cpp_lib_execution
-				if (flags & chs::flags::build::PARALLEL)
-				{
-					std::sort(std::execution::par_unseq, points.begin(), points.end(), cmp);
-				}
-				else
-#endif
-					std::sort(points.begin(), points.end(), cmp);
-			}
 
 			// Assign points to cells
 			ranges::for_each(points, [&](auto & point) { add_point(coord2indices(point), &point); });
@@ -209,23 +196,25 @@ namespace chs
 
 		CMap(std::vector<Point_type> & points, dimensions_type res,
 		     [[maybe_unused]] chs::flags::build::flags_t flags = {}) :
-		        resolutions_(res), box_(Box::mbb(points))
+		        resolutions_(res), box_(box_type::mbb(points))
 		{}
 
-		template<chs::concepts::Kernel<chs::Point> Kernel_t>
+		template<chs::concepts::Kernel<Point_type> Kernel_t>
 		[[nodiscard]] inline auto query(const Kernel_t & kernel) const
 		{
 			const auto dummy = []([[maybe_unused]] const auto &) { return true; };
 			return query(kernel, dummy);
 		}
 
-		template<chs::concepts::Kernel<chs::Point> Kernel_t, chs::concepts::Filter<Point_type> Filter_t>
+		template<chs::concepts::Kernel<Point_type> Kernel_t, chs::concepts::Filter<Point_type> Filter_t>
 		[[nodiscard]] inline auto query(const Kernel_t & kernel, Filter_t && filter) const
 		{
-			std::vector<Point *> points;
+			std::vector<Point_type *> points;
 
-			const auto query_min = kernel.box().min();
-			const auto query_max = kernel.box().max();
+			auto query_min = box_.min();
+			auto query_max = box_.max();
+			chs::fill<Kernel_t::dim>(query_min, [&](const auto i) { return kernel.box().min()[i]; });
+			chs::fill<Kernel_t::dim>(query_max, [&](const auto i) { return kernel.box().max()[i]; });
 
 			const auto min = coord2indices(query_min);
 			const auto max = coord2indices(query_max);
@@ -285,8 +274,10 @@ namespace chs
 			{
 				search_radius = next_radius;
 
-				const auto min = coord2indices(p - search_radius);
-				const auto max = coord2indices(p + search_radius);
+				const box_type search_box(p, search_radius);
+
+				const auto min = coord2indices(search_box.min());
+				const auto max = coord2indices(search_box.max());
 
 				// If min == taboo_mins and max == taboo_maxs, we have already visited all those cells
 				// If not, we search those cells

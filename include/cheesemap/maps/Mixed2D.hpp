@@ -37,7 +37,7 @@ namespace chs
 		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
 		{ return *slice_.at(indices); }
 
-		CHSINLINE void add_point_impl([[maybe_unused]] const indices_type & idx, Point * point_ptr)
+		CHSINLINE void add_point_impl([[maybe_unused]] const indices_type & idx, Point_type * point_ptr)
 		{ slice_.add_point(*point_ptr); }
 
 		void allocate_cells_impl()
@@ -57,7 +57,7 @@ namespace chs
 
 		template<typename Points_rng>
 		Mixed2D(Points_rng & points, const dimensions_type & res, const chs::flags::build::flags_t flags = {}) :
-		        Super(points, res, flags), slice_(Box::mbb(points), res)
+		        Super(points, res, flags), slice_(Box<Point_type, Dim>::mbb(points), res)
 		{ this->init(points, res, flags); }
 	};
 } // namespace chs

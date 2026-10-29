@@ -41,10 +41,15 @@ set(
 set_property(CACHE cheesemap_INSTALL_CMAKEDIR PROPERTY TYPE PATH)
 mark_as_advanced(cheesemap_INSTALL_CMAKEDIR)
 
+configure_package_config_file(
+    "${PROJECT_SOURCE_DIR}/cmake/install-config.cmake.in"
+    "${PROJECT_BINARY_DIR}/${package}Config.cmake"
+    INSTALL_DESTINATION "${cheesemap_INSTALL_CMAKEDIR}"
+)
+
 install(
-    FILES cmake/install-config.cmake
+    FILES "${PROJECT_BINARY_DIR}/${package}Config.cmake"
     DESTINATION "${cheesemap_INSTALL_CMAKEDIR}"
-    RENAME "${package}Config.cmake"
     COMPONENT cheesemap_Development
 )
 

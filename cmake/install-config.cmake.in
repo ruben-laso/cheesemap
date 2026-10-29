@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(range-v3)
+find_dependency(Armadillo)
+
+if (@cheesemap_PARALLEL@)
+    find_dependency(TBB)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/cheesemapTargets.cmake")

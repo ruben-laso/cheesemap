@@ -40,7 +40,7 @@ target_compile_features(cheesemap_cheesemap INTERFACE cxx_std_20)
 if (cheesemap_PARALLEL)
     find_package(TBB REQUIRED)
     target_link_libraries(
-            cheesemap_cheesemap ${warning_guard}
+            cheesemap_cheesemap
             INTERFACE
             TBB::tbb
     )
@@ -49,7 +49,7 @@ endif ()
 # Required: range-v3
 find_package(range-v3 REQUIRED)
 target_link_libraries(
-        cheesemap_cheesemap ${warning_guard}
+        cheesemap_cheesemap
         INTERFACE
         range-v3::range-v3
 )

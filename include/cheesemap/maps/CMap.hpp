@@ -2,26 +2,22 @@
 
 #include <array>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include <range/v3/all.hpp>
 
-#include "cheesemap/utils/execution.hpp"
-
 #include "cheesemap/concepts/concepts.hpp"
 
-#include "cheesemap/utils/Box.hpp"
-#include "cheesemap/utils/Cell.hpp"
-#include "cheesemap/utils/sorted_vector.hpp"
-
 #include "cheesemap/utils/arithmetic.hpp"
+#include "cheesemap/utils/Box.hpp"
 #include "cheesemap/utils/Cartesian.hpp"
+#include "cheesemap/utils/Cell.hpp"
+#include "cheesemap/utils/execution.hpp"
 #include "cheesemap/utils/flags.hpp"
-#include "cheesemap/utils/type_traits.hpp"
-
 #include "cheesemap/utils/inline.hpp"
+#include "cheesemap/utils/sorted_vector.hpp"
+#include "cheesemap/utils/type_traits.hpp"
 
 namespace chs
 {
@@ -121,10 +117,10 @@ namespace chs
 		[[nodiscard]] auto cell_exists(const indices_type & indices) const -> bool
 		{ return static_cast<const Derived_type *>(this)->cell_exists_impl(indices); }
 
-		[[nodiscard]] auto at(const indices_type & indices) -> cell_type &
+		[[nodiscard]] auto at(const indices_type & indices) -> cell_type *
 		{ return static_cast<Derived_type *>(this)->at_impl(indices); }
 
-		[[nodiscard]] auto at(const indices_type & indices) const -> const cell_type &
+		[[nodiscard]] auto at(const indices_type & indices) const -> const cell_type *
 		{ return static_cast<const Derived_type *>(this)->at_impl(indices); }
 
 		void add_point(const indices_type & idx, Point_type * point_ptr)
@@ -177,9 +173,9 @@ namespace chs
 			const auto min             = chs::n_tuple<Dim>(0UL);
 			const auto non_empty_cells = static_cast<std::size_t>(ranges::count_if(
 			        chs::cartesian_open_bound<Dim>(min, sizes_), [&](const auto & indices) {
-				        if (not cell_exists(indices)) { return false; }
-				        const auto & cell = at(indices);
-				        return not cell.empty();
+				        const auto & cell_ptr = at(indices);
+				        if (not cell_ptr) { return false; }
+				        return not cell_ptr->empty();
 			        }));
 			density_ = static_cast<double>(points.size()) / static_cast<double>(non_empty_cells);
 		}
@@ -225,11 +221,11 @@ namespace chs
 
 			for (const auto & indices : chs::cartesian<Dim>(min, max))
 			{
-				if (not cell_exists(indices)) { continue; }
+				const auto & cell_ptr = at(indices);
 
-				const auto & cell = at(indices);
+				if (not cell_ptr) { continue; }
 
-				for (const auto & point : cell)
+				for (const auto & point : *cell_ptr)
 				{
 					if (kernel.is_inside(*point) and filter(*point)) { points.emplace_back(point); }
 				}
@@ -286,11 +282,11 @@ namespace chs
 					for (const auto & indices : chs::cartesian<Dim>(min, max))
 					{
 						if (is_taboo(indices)) { continue; }
-						if (not cell_exists(indices)) { continue; }
 
-						const auto & cell = at(indices);
+						const auto & cell_ptr = at(indices);
+						if (not cell_ptr) { continue; }
 
-						for (const auto & point : cell)
+						for (const auto & point : *cell_ptr)
 						{
 							candidates.insert({ chs::sq_distance(p, *point), point });
 						}
@@ -345,10 +341,10 @@ namespace chs
 			const auto zeros = chs::n_tuple<Dim>(0UL);
 			for (const auto & indices : chs::cartesian_open_bound<Dim>(zeros, sizes_))
 			{
-				const auto gbl_idx = indices2global(indices);
-				if (not cell_exists(indices)) { continue; }
-				const auto & cell   = at(indices);
-				num_points[gbl_idx] = cell.size();
+				const auto   gbl_idx  = indices2global(indices);
+				const auto & cell_ptr = at(indices);
+				if (not cell_ptr) { continue; }
+				num_points[gbl_idx] = cell_ptr->size();
 			}
 
 			return num_points;
@@ -378,9 +374,9 @@ namespace chs
 			const auto zeros = chs::n_tuple<Dim>(0);
 			for (const auto & indices : chs::cartesian_open_bound<Dim>(zeros, sizes_))
 			{
-				if (not cell_exists(indices)) { continue; }
-				const auto & cell = at(indices);
-				empty_cells += cell.empty() ? 1 : 0;
+				const auto & cell_ptr = at(indices);
+				if (not cell_ptr) { continue; }
+				empty_cells += cell_ptr->empty() ? 1 : 0;
 			}
 
 			return empty_cells;

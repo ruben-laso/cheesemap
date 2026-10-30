@@ -28,11 +28,11 @@ namespace chs
 		        -> bool
 		{ return true; }
 
-		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type &
-		{ return cells_[this->indices2global(indices)]; }
+		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type *
+		{ return &cells_[this->indices2global(indices)]; }
 
-		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
-		{ return cells_[this->indices2global(indices)]; }
+		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type *
+		{ return &cells_[this->indices2global(indices)]; }
 
 		CHSINLINE void add_point_impl(const indices_type & idx, Point_type * point_ptr)
 		{ cells_[this->indices2global(idx)].emplace_back(point_ptr); }

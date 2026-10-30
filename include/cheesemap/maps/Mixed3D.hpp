@@ -40,11 +40,11 @@ namespace chs
 		[[nodiscard]] CHSINLINE auto cell_exists_impl(const indices_type & indices) const -> bool
 		{ return find(indices) != nullptr; }
 
-		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type &
-		{ return *find(indices); }
+		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type *
+		{ return find(indices); }
 
-		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
-		{ return *find(indices); }
+		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type *
+		{ return find(indices); }
 
 		CHSINLINE void add_point_impl(const indices_type & idx, Point_type * point_ptr)
 		{

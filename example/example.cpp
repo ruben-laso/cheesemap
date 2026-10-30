@@ -11,13 +11,13 @@
 #include "handlers.hpp"
 
 template<typename BuildMapFunction, typename Points>
-void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points);
+static void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points);
 
 template<typename Map, typename Points>
-void benchmark_query(const Map & map, const Points & points);
+static void benchmark_query(const Map & map, const Points & points);
 
 template<typename Map, typename Points>
-void benchmark_knn(const Map & map, const Points & points);
+static void benchmark_knn(const Map & map, const Points & points);
 
 auto main(const int argc, const char * const argv[]) -> int
 {
@@ -96,11 +96,11 @@ auto main(const int argc, const char * const argv[]) -> int
 	return EXIT_SUCCESS;
 }
 
-auto percent(const auto & part, const auto & total) -> double
+static auto percent(const auto & part, const auto & total) -> double
 { return (static_cast<double>(part) / static_cast<double>(total)) * 100.0; }
 
 template<typename BuildMapFunction, typename Points>
-void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points)
+static void benchmark_map(const std::string & map_name, const BuildMapFunction && build_map, Points & points)
 {
 	std::cout << "----------------------------------------\n";
 	std::cout << "Benchmarking map: " << map_name << '\n';
@@ -143,9 +143,8 @@ void benchmark_map(const std::string & map_name, const BuildMapFunction && build
 	std::cout << "========================================\n";
 }
 
-
 template<typename Map, typename Points>
-void benchmark_query(const Map & map, const Points & points)
+static void benchmark_query(const Map & map, const Points & points)
 {
 	std::size_t max_neighs = std::numeric_limits<std::size_t>::min();
 	std::size_t min_neighs = std::numeric_limits<std::size_t>::max();
@@ -170,6 +169,7 @@ void benchmark_query(const Map & map, const Points & points)
 		};
 
 		query(chs::kernels::Sphere<typename Points::value_type, 3>(p, 2.5));
+		// query(chs::kernels::Cube<typename Points::value_type, 2>(p, 2.5));
 	}
 
 	std::cout << "#Queries: " << NUM_SEARCHES << '\n';
@@ -181,7 +181,7 @@ void benchmark_query(const Map & map, const Points & points)
 }
 
 template<typename Map, typename Points>
-void benchmark_knn(const Map & map, const Points & points)
+static void benchmark_knn(const Map & map, const Points & points)
 {
 	static constexpr std::size_t NUM_SEARCHES = 100'000;
 

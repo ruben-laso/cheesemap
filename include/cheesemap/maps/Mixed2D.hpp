@@ -2,9 +2,8 @@
 
 #include <unordered_map>
 
-#include "cheesemap/maps/SmartSlice.hpp"
-
 #include "cheesemap/maps/CMap.hpp"
+#include "cheesemap/maps/SmartSlice.hpp"
 
 #include "cheesemap/utils/inline.hpp"
 
@@ -31,11 +30,11 @@ namespace chs
 		[[nodiscard]] CHSINLINE auto cell_exists_impl(const indices_type & indices) const -> bool
 		{ return slice_.find(indices) != nullptr; }
 
-		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type &
-		{ return *slice_.at(indices); }
+		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) -> cell_type *
+		{ return slice_.find(indices); }
 
-		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type &
-		{ return *slice_.at(indices); }
+		[[nodiscard]] CHSINLINE auto at_impl(const indices_type & indices) const -> const cell_type *
+		{ return slice_.find(indices); }
 
 		CHSINLINE void add_point_impl([[maybe_unused]] const indices_type & idx, Point_type * point_ptr)
 		{ slice_.add_point(*point_ptr); }
